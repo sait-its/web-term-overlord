@@ -1,0 +1,27 @@
+---
+services:
+  overlord:
+    image: hongsait/overlord:latest
+    container_name: overlord
+    hostname: overlord
+    # ports:
+    #   - "2222:2222"
+    expose:
+      - "2222"
+    restart: unless-stopped
+
+  web-term-overlord:
+    image: hongsait/web-term-overlord:latest
+    container_name: web-term-overlord
+    volumes:
+      - ./logs.db:/app/logs.db
+    environment:
+      - BACKEND_SSH_HOST=overlord
+      - BACKEND_SSH_PORT=2222
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    restart: unless-stopped
+    depends_on:
+      - overlord

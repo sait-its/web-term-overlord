@@ -1,9 +1,10 @@
-FROM oven/bun:1 AS base
+FROM node:trixie-slim AS base
 WORKDIR /app
 
 FROM base AS install
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile || bun install
+RUN apt-get update && apt-get install -y python3 build-essential && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json* ./
+RUN npm ci || npm install
 
 FROM base AS release
 COPY --from=install /app/node_modules ./node_modules
@@ -15,4 +16,4 @@ EXPOSE 8080
 ENV BACKEND_SSH_HOST=host.docker.internal
 ENV BACKEND_SSH_PORT=2222
 
-CMD ["bun", "run", "src/server/index.ts"]
+CMD ["node", "--loader", "ts-node/esm", "src/server/index.ts"]
