@@ -960,9 +960,10 @@
       }
 
       function showLoginError(message) {
-        loginError.textContent = message;
-        loginError.classList.remove('hidden');
-        loginOverlay.classList.remove('hidden');
+        // Store error and username in sessionStorage, then reload
+        sessionStorage.setItem('loginError', message);
+        sessionStorage.setItem('lastUsername', usernameInput.value);
+        window.location.reload();
       }
 
       loginForm.addEventListener('submit', (e) => {
@@ -1081,7 +1082,21 @@
       preloadWasm();
       loadInstructions();
 
-      usernameInput.focus();
+      // Restore login error and username from sessionStorage (after auth failure reload)
+      const storedError = sessionStorage.getItem('loginError');
+      const storedUsername = sessionStorage.getItem('lastUsername');
+      if (storedError) {
+        loginError.textContent = storedError;
+        loginError.classList.remove('hidden');
+        sessionStorage.removeItem('loginError');
+      }
+      if (storedUsername) {
+        usernameInput.value = storedUsername;
+        sessionStorage.removeItem('lastUsername');
+        passwordInput.focus();
+      } else {
+        usernameInput.focus();
+      }
     </script>
   </body>
 </html>
