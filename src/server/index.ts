@@ -195,8 +195,18 @@ wss.on('connection', (ws, req) => {
           });
 
           ssh.on('error', (err) => {
+            const isConnectionError = err.message.includes('ECONNREFUSED') || 
+                                      err.message.includes('ETIMEDOUT') ||
+                                      err.message.includes('ENOTFOUND') ||
+                                      err.message.includes('EHOSTUNREACH');
+            
+            const eventType = isConnectionError ? 'connection_error' : 'auth_failure';
+            const userMessage = isConnectionError 
+              ? 'Connection refused - SSH server may not be running'
+              : 'Authentication failed';
+
             log({
-              event_type: 'auth_failure',
+              event_type: eventType,
               username: auth.username,
               fingerprint: auth.fingerprint,
               ip_address: session?.ipAddress,
@@ -204,8 +214,9 @@ wss.on('connection', (ws, req) => {
               session_id: session?.sessionId,
               details: `SSH error: ${err.message}`
             });
-            ws.send(`\r\n\x1b[31mSSH Error: ${err.message}\x1b[0m\r\n`);
-            ws.close();
+            ws.send(JSON.stringify({ type: 'error', error: userMessage }), () => {
+              ws.close();
+            });
           });
 
           ssh.connect({

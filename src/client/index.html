@@ -72,10 +72,24 @@
         transition: width 0.3s ease;
       }
 
+      .progress-fill.gold {
+        background: linear-gradient(90deg, #ffd700, #ffec8b, #ffd700);
+      }
+
       .progress-text {
         color: #888;
         font-size: 12px;
         font-family: Monaco, Menlo, 'Courier New', monospace;
+      }
+
+      .progress-text.gold {
+        color: #ffd700;
+        text-shadow: 0 0 10px #ffd700;
+      }
+
+      .title.gold {
+        color: #ffd700;
+        text-shadow: 0 0 10px #ffd700;
       }
 
       .connection-status {
@@ -323,6 +337,7 @@
         overflow: hidden;
         padding: 8px;
         display: flex;
+        min-width: 0;
       }
 
       #terminal-container.instructions-visible {
@@ -388,6 +403,7 @@
         flex: 1;
         position: relative;
         overflow: hidden;
+        min-width: 0;
       }
 
       .login-overlay {
@@ -631,8 +647,62 @@
           progressFill.style.width = percentage + '%';
           progressText.textContent = `${level}/${maxOverlordLevel}`;
           progressContainer.classList.add('visible');
+          
+          // Check if max level reached
+          if (level === maxOverlordLevel) {
+            titleText.classList.add('gold');
+            progressFill.classList.add('gold');
+            progressText.classList.add('gold');
+            launchConfetti();
+          }
         } else {
           progressContainer.classList.remove('visible');
+        }
+      }
+
+      function launchConfetti() {
+        const colors = ['#ffd700', '#ffec8b', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dfe6e9', '#fd79a8', '#a29bfe'];
+        const confettiCount = 200;
+        
+        // Launch confetti in 3 explosive waves
+        for (let wave = 0; wave < 3; wave++) {
+          setTimeout(() => {
+            const centerX = 50 + (Math.random() * 30 - 15);
+            const centerY = 30 + (Math.random() * 20 - 10);
+            
+            for (let i = 0; i < confettiCount / 3; i++) {
+              const confetti = document.createElement('div');
+              const size = Math.random() * 12 + 6;
+              confetti.style.cssText = `
+                position: fixed;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                left: ${centerX}vw;
+                top: ${centerY}vh;
+                opacity: 1;
+                pointer-events: none;
+                z-index: 9999;
+                border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+              `;
+              document.body.appendChild(confetti);
+              
+              const angle = Math.random() * Math.PI * 2;
+              const velocity = Math.random() * 60 + 40;
+              const endX = Math.cos(angle) * velocity;
+              const endY = Math.sin(angle) * velocity + 80;
+              const duration = Math.random() * 2000 + 3000;
+              const rotation = Math.random() * 1080 - 540;
+              
+              confetti.animate([
+                { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: 1 },
+                { transform: `translate(${endX}vw, ${endY}vh) rotate(${rotation}deg) scale(0.3)`, opacity: 0 }
+              ], {
+                duration: duration,
+                easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+              }).onfinish = () => confetti.remove();
+            }
+          }, wave * 600);
         }
       }
 
@@ -826,6 +896,7 @@
           ws = new WebSocket(wsUrl);
 
           let authSuccess = false;
+          let lastError = '';
 
           ws.onopen = () => {
             console.log('WebSocket opened');
@@ -839,14 +910,12 @@
                 ws.send(JSON.stringify({ type: 'auth', username, password, fingerprint: browserFingerprint }));
                 return;
               }
+              if (msg.type === 'error') {
+                lastError = msg.error;
+                return;
+              }
             } catch {
               // Not JSON, terminal data
-            }
-
-            // Check for SSH error message
-            if (event.data.includes('SSH Error:')) {
-              showLoginError('Authentication failed');
-              return;
             }
 
             if (loginOverlay.classList.contains('hidden') === false) {
@@ -864,17 +933,13 @@
           ws.onerror = (error) => {
             console.error('WebSocket error:', error);
             setStatus('disconnected', 'Error');
-            showLoginError('Connection failed');
           };
 
           ws.onclose = () => {
             console.log('WebSocket closed');
             setStatus('disconnected', 'Disconnected');
             if (!authSuccess) {
-              // Store username for after reload
-              sessionStorage.setItem('authFailedUsername', username);
-              sessionStorage.setItem('authFailed', 'true');
-              window.location.reload();
+              showLoginError(lastError || 'Authentication failed');
             } else {
               // Reload page to reset terminal state completely
               window.location.reload();
@@ -898,7 +963,6 @@
         loginError.textContent = message;
         loginError.classList.remove('hidden');
         loginOverlay.classList.remove('hidden');
-        showTitleBarError(message);
       }
 
       loginForm.addEventListener('submit', (e) => {
@@ -1017,17 +1081,7 @@
       preloadWasm();
       loadInstructions();
 
-      // Check if we're returning from a failed auth
-      if (sessionStorage.getItem('authFailed') === 'true') {
-        const savedUsername = sessionStorage.getItem('authFailedUsername') || '';
-        sessionStorage.removeItem('authFailed');
-        sessionStorage.removeItem('authFailedUsername');
-        usernameInput.value = savedUsername;
-        showLoginError('Authentication failed');
-        passwordInput.focus();
-      } else {
-        usernameInput.focus();
-      }
+      usernameInput.focus();
     </script>
   </body>
 </html>
