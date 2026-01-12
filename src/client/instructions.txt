@@ -1,0 +1,236 @@
+Welcome to the Overlord server!
+
+General rules - be respectful, if you find bugs or errors notify doug.warden@sait.ca.
+
+Please don't intentionally try to break things, this is designed to be a learning exercise for students
+
+===========overlord0======================
+Read the contents of the README in your home folder
+
+==Helpful Commands==
+
+ls, cat, more, |, less, head, tail
+
+
+===========overlord1======================
+
+The file you are looking for is a hidden file this time.
+
+Have a look at the man pages and help files of utilities as we work through them. The default behaviour of a utility will barely scratch the surface of what it can do.
+
+Be clear on what an "argument" and an "option" is when entering commands in Linux. If you're not sure - please take some time and look it up online. A decent basic Linux command reference can be found at https://www.hostinger.com/tutorials/linux-commands.
+
+Also, references on the Internet are okay, but it's best to know how to look for help using the help utilities inside Linux: there are quite a few of them try to find and apply at least three different options to the ls command - and test them on a random folder (you can "cd /etc" to test ls or use /tmp to work in at any time on this server).
+
+We'll be getting into trickier applications of some utilities as we move forward, so it will be important to know how to use all the options a command can use so that means you'll need to find help on different commands... this is part of the "hidden agenda" of this challenge - spend a few minutes exploring some of the possible ways of getting help on a command (and also to find the solution to this level, of course).
+
+Help available for different utilities may vary, but using builtin help for a command like "ls" you could try some of the following to learn about a command:
+
+whatis ls
+info ls
+man ls
+ls --help
+
+
+Also, sometimes, if you type "sl" instead of "ls" it can really be a waste of time...
+
+It may be a little harder to find the contents of README file if it's hidden, even if it's in the most likely place to look....
+
+==Helpful Commands==
+ls, cat, man, --help, help (tab) - ie "help cd", whatis 
+
+===========overlord2======================
+
+For this we'll work on moving around the O/S - the command is "cd" and short for "change directory" - as with all commands use the "help" or "man" functionality to learn the nuances of using the utility.... 
+One of the things you'll learn if you look at the man page for "cd", is that it is NOT a utility, but an "internal" command in bash.... what does this mean? 
+
+Many commands have physical programs - usually in /usr/bin/ (feel free to go and check.... you should see utilities like "ping", "mv", "ssh", and "cal"). cd, like many other commands, is directly built into the BASH interpreter, and is what is known as an "internal" command - When you type in a command, the BASH interpreter does a few things: 
+1)it will check if it's an understood alias or function (these would be in memory) 
+2)it checks if it is an internal command part of BASH (if it is, it executes it) if not it...
+3)looks in the $PATH variable that point to various folders in the OS that hold utilities (you can "echo $PATH to take a look at the folders it will search) and 
+4)if it doesn't find it anywhere else, it will look in the current folder to see if there is an executable file matching the command and 
+5) will look in the absolute/relative path that the user supplied to try to run the command. 
+
+So the internal commands are built into BASH - in terms using cd - some of the different options/arguments to explore (you can use the "pwd" command to check your relative position in the file system at any time) 
+cd /
+cd ~
+cd .
+cd ..
+cd -
+
+here is the URL for a decent tutorial: https://linuxize.com/post/linux-cd-command/
+
+For this challenge you might want to copy the following instructions out, or create a second ssh connection to the server to read the commands while you work through it. 
+For this challenge cd to the root of the drive, then proceed into the etc folder. From here, cd into the selinux folder. Once inside the folder, look at the contents and proceed into the only folder contained in this folder. Once here, go into the policy folder. From this location you can cd ../contexts/files. From here go up one folder and down into the folder which you have not been into yet. To move to the next level, you will need to proceed to the folder which is the colour of the pill which led to reality rather than blissful ignorance in the movie "The Matrix". (If you haven't seen it I'm sure you could look it up...). 
+
+===========overlord3======================
+
+We intentionally took that last challenge into the "/etc/selinux" folder. selinux stands for "Security Enhanced Linux". It's a framework that uses policies to make decisions if an application or process can access an object like a file or folder. It's an important part of properly securing a Linux installation - but for us in the 2nd and 3rd semesters, we aren't teaching how to configure it and it OFTEN gets in the way of other services working properly, like apache, sendmail and others - causing a lot of grief for students - everything is configured right, but the service is unable to access the files or folders it needs because it's not allowed in SELinux. For us, we'll mostly just turn SELinux off at this point, although you may revisit this in security courses. 
+
+You can check the man page (man selinux) and search the web for a tool that will describe the current status of selinux on the overlord server. The password for overlord4 is the output of this tool.
+
+===========overlord4======================
+
+You've likely been using "cat" so far to look at the contents of a file, and it's great at that, but it is actually short for "concatenate" - if you aren't sure what that means... then you should look it up.
+
+So... - using cat (check the man pages or online for more advanced usages) to view the files, go to the /challenges folder and get the output of all the files at the same time. Combine the files you have access to in order to create the password for overlord3 
+
+- we may revisit some different techniques for doing this down the road, at this point you might be reduced to laboriously cutting and pasting strings together, but try doing some investigation to see if you can get the output to single string
+
+===========overlord5======================
+
+We've been using "cat" to look at the contents of a file, but there are other ways to do this. When we enter a command, it outputs the contents of the command to the console or screen .... normally. But there are a couple of special characters we can use to "redirect" this output - here are three important ones: "|" is a "pipe" and it will take the output of the first command, and make that output the input to a second command. like: "cat | more"
+- you may have been using this already to look at this instructions.txt file. If you "cat instructions.txt" it scrolls off the screen because it's so long - you can "cat instructions.txt | more" (try it!) and it will take the output of the first command as input for the second command (more). It's called "more" because it will display one screenful of information and then pause and tell you there is "--more--" when you hit the spacebar it will show you the next screen. Instead of using a pipe, you could also just use the more utility like this: "more instructions.txt".
+We can do the same with other utilities where you cat a file, and make the out for the command the input of other file viewing utilities: more, less, head, and tail.
+The other two redirectors to mention are ">" and ">>"
+- ">" will redirect the output of what would have shown on the screen to where ever you want it, often into a file - if the file doesn't exist, it will create it.
+- ">>" is almost the same as ">" except it will append the output to what ever was going to show onscreen and instead of overwriting it (like it would do with >), it will add it to the end of the file. This very useful for logging or doing backups etc.
+
+If you want to test this, you can go to /tmp where you have write permissions to try > and >> out. Like: 
+
+cd /tmp
+echo hello
+echo hello > newfile
+cat newfile
+echo goodbye > newfile
+cat newfile
+echo 12345 >> newfile
+cat newfile
+
+So... - using "cat" and your new found information about redirectors with utilities like more, less, head and tail... go to the /challenges folder and combine the files you have access to in order to create the next password.
+
+- we may revisit some different techniques for doing this down the road, at this point you might be reduced to laboriously cutting and pasting strings together, but try doing some investigation to see if you can get the output to single string
+
+===========overlord6======================
+
+So far we've been looking at the contents of files, you may or may not have noticed that you are limited as a regular user to what you can or can't access - if you consider the /challenges folder, can you get access to the overlord2 folder when you're logged in as overlord6? (hopefully not - but test it, and see if you can figure out how this was set). We're hoping to make it so user's can't skip ahead to the last challenge without working through everything.
+
+Let's take a look at folder/file permissions:
+
+File permissions in Linux are relatively limited compared to Windows - you can set permissions for a "User", a "Group", and everyone else or "Others" (UGO) for each of these they can be: read, write, execute - interestingly to be able to read a folder, you need to also be able to execute (again, if you want to test any of this, you can use the /tmp folder).
+
+If we look at a folder with a long file listing ("ls -l" (or it's "alias") "ll") we see:
+
+[overlord5@overlord challenges]$ ls -l
+total 0
+dr-xr-x--- 2 root overlord4 41 Jan  3 11:34 overlord4
+dr-xr-x--- 2 root overlord5 41 Jan  3 12:19 overlord5
+
+for each object in the folder the entry starts with 10 characters - the first is what type of object it is ("d" is a directory, a "-" is a file) and then repeated three times we have "rwx" - for Read, Write and eXecute - it's repeated three times for each possible thing we can set permissions on: U, G, O. The User who owns the file are the first three permissions - if there is a letter in the position, it means that permission is applied to the user - in the case of first directory listed, the user that owns the directory is "root", and the read and execute permissions apply, but be write, because there is a "-" in the "w" position. The Group owner of the file is "overlord4", and everyone else (Others) is the last three characters. The permissions are then followed by the number 2 which represents the links to the file (don't worry about this now...) which is then followed by the user that is the "owner" of the file. Then the group that owns the file, then the number 41 - this indicates the size of the file in bytes, followed by a time stamp for when it was last modified, and ends with the name of the object.
+
+To work with file and folder permissions there is a family of commands starting with "ch" (for "change") - "chmod" - which allows us to change the permissions on a file, "chown", which allows to change which user owns a file (regardless of permissions), and "chgrp" which changes which group owns the file. That's it.
+
+To use chmod we can use either letters or numbers to set permissions. To use letters to add or remove permissions from the existing ones you can simply use + or - with the "UGO" settings you want to add or remove, like:
+
+[root@overlord challenges]# ll 
+drwxr-xr-x 2 root overlord3 41 Dec 20 11:06 overlord3
+[root@overlord challenges]# chmod o-rx overlord3
+[root@overlord challenges]# ll
+drwxr-x--- 2 root overlord3 41 Dec 20 11:06 overlord3
+
+so this is pretty intuitive, you can see from the above, "o-rx" removed the Read and eXecute permission from Others. We can use chmod to add or remove permissions for UGO, but not change who owns the file, you need chown or chgrp for this. You can stack up both what it applies to (UGO) and what the permissions are into a single command or do it in multiple passes.
+
+-OR- 
+
+you can use numbers to do this, this is binary (of course) and "rwx" corresponds to "421" positions so "read" would be "4" and "read and execute" corresponds to "5" The number for each UGO position will outline the whole permissions for the object. The thing with using numbers to set this is you need to set them for each aspect of UGO - so in the finished overlord3 permission to be set - I could have just declared this as:
+#chmod 750 overlord3
+
+SO ... enough talk, what do we need to do?
+ 
+In the /challenges folder there is a file you have access to, append the UGO permissions as expressed in numbers to the string in the file to find the password for the next overlord level.
+
+===========overlord7======================
+
+Remember for all of these that you should spend some time actually testing and looking at man/help files while learning new utilities so you can UNDERSTAND them better: 
+
+We've looked at "ls" to show us a file listing, also at various file reading utilities and permissions - the next two challenges will require you to take it up a notch when dealing with "weird", in a Linux file system sense, attributes of the system. You may need to do some Internet research in addition to the man to see the contents of the files in the /challenges folders.
+The first is dealing with spaces in a filename - I usually avoid long names with spaces on both Windows and Linux in case I ever need to call them is a script, because then it becomes a problem.
+ 
+You may also want to research the use of "escape" characters and the use of quotes in reference to files.
+
+Go to the /challenges folder and read the file for the password to the next overlord level.
+
+
+===========overlord8======================
+
+
+Just pointing out for the previous one that "\" works as an escape character, but generally using tab to autocomplete whenever you are working with files and folders is quicker, easier, and allows you to skip typos. The other best practice you should be using is up arrow to move back through previous commands to repeat or modify 
+
+Same drill on this one, go to the /challenges folder and read the file to get the password for the next overlord level. Use the Internet if you need to do some research on how to get into this one...
+
+
+
+===========overlord9======================
+
+To find the password to the next level we're returning to the /challenges folder. 
+
+We've looked at the contents of a file, whether it's short, long and at the beginning or end of that file, we've looked at a couple of oddly formatted filenames to introduce some new concepts.... this time we need to find a string of text inside a lot of text in a large file. 
+
+In linux everything is a file, and almost all of these files are text files that we can read and manipulate as sysadmins, so it's super useful when you are working with logs, writing scripts or working with configurations to be able to find and manipulate strings in text files. We'll come back to this later when we start writing a simple bash script. For now we'll look at searching, and for this we can use the "grep" utility - which apparently stands for "Global Regular Expression Print and search". You can use grep as a part of a pipeline; where you would "cat file | grep string" and the output is the line(s) which contain the string you are looking for. There are lots of options and special things we can do and work with using grep and regular expressions, so it might be worthwhile looking at the man pages and doing some research on some of the options, we'll need them later but for now we're doing a simple search.
+
+you can feel free to read through the file to find it if you wish, only know that in the file in /challenges, it is the word immediately following the word homework. 
+
+
+===========overlord10======================
+We're going to look at a couple of different things on this level - the "cut" utility and a small intro to shell scripting (we might get you to write one later, so you might want to have a look at this one to get an idea of what's going on).
+
+A shell script is a text file which is executable in terms of it's permissions, and holds bash commands - it will execute the commands in the file in order (unless there is a condition statement like "if" or "while") until it hits the end of the file. It will start with a "shebang" - which is a line which tells the system where to find the command line interpreter which will interpret the commands in the script and usually is:
+
+#!/bin/bash 
+
+Followed by a list of commands - so we can start to string a pile of commands together to make a script...
+
+"cut" is a utility that is super useful for pulling a specific piece of information out of a file like logs - 
+
+For example in the home folder for this user is a file called "secure" which is a copy of a section of the log found at /var/log/secure on the overlord server - it tracks all use of permissions that happen on the system, like logging on or running sudo. If we wanted to pull out a list of each user login showing only the username and IP they logged in from we could build a pretty simple "one liner" by stringing together a bunch of the commands with "|" we've already worked with and the "cut" utility. The file is reasonably large, so we need to remove the lines and information we don't want. 
+
+Go to the home folder for this user and try this: (**USE the UP Arrow between EACH command to make this easier!!**)
+
+0)"more secure" (this will give you an idea of the size of the file and its contents)
+
+1)"cat secure" (gives all lines and info without pausing, most of which we don't want - but if you look, the lines we want all have the word "Accepted" in them so try...)
+
+2) "cat secure | grep Accep" (this will cut out the lines we don't want, but still gives a bunch of info on each line we need to get rid of so we can cut out the bits we don't want... we can specify a "space" as a delimiter, like a comma is in a CSV, and then which "fields" we want to cut out )
+
+3) "cat secure | grep Accep | cut -d" " -f10,12" (It's interesting to play with this - check out the contents if you only cut field 1, then up arrow and cut field 2, then 3.... etc. once you get to 10 AND 12 it's almost what we want, but we have a lot of duplicates, to cut duplicates we can uniq it, but it has to be sorted before uniq can remove duplicate lines.... so)
+
+4)"cat secure | grep Accep | cut -d" " -f10,12 | sort"
+
+5)"cat secure | grep Accep | cut -d" " -f10,12 | sort | uniq"
+
+This is an example, but it can be pretty slick as you get good at manipulating text with the built in utilities. You can try playing with this file to see if you can cut out different pieces of information.
+
+Check out the man page around the cut utility and try playing with this if you want to learn more - cutting different information or fields.
+You could figure this out from scratch next time you needed to find the same information -OR- you could build this string of commands into a script and save it so it's easy to do next time you need it.
+
+None of this gets you to the next level, but we wanted to explain things a little so you know what's coming up.
+
+For this challenge, go to the file you have access to in the challenges folder, and pull out the unwanted characters like "y,t,z,6,2,8, and m" from the passwdinhere.txt file to get the password for the next level - If you can figure out how to run a shell script, it could make this pretty easy.
+
+
+
+===========overlord11======================
+
+For this level you'll need to examine the "find" command - useful for locating things in the O/S - specifically from the current working directory down the file system. In this case somewhere inside the /etc/challenges2 folder (note the change!) is a file called "trapped" that holds the password. Also - this utility can accept wild card characters.
+
+===========overlord12======================
+
+We'll go a little deeper with find. Somewhere on the server is a file which is owned by the overlord12 user, which is 41 bytes in size and it contains the password for the next level. It might be really helpful also to have a look at standard output, and how to have an error get sent to null, so it doesn't show a million false positives (errors). This might be one where it's worth looking at the man pages and maybe the Internet to limit your search and get rid of the errors.
+
+===========overlord13======================
+
+In the file which you can access in the /challenges folder (somewhereinhere) has many potential passwords for the next level. You are looking for the only line that occurs once. Once you found this line, append the total number of lines in the somewhereinhere file to the unique line ... the result is the password. There are a few ways you could find this value, to find the line that only occurs one you might need to noodle with some of the utilities we've already worked with. To get the lines you might try looking at the word count "wc" utility.
+
+===========overlord14======================
+
+For this one, the password spread across the files inside the folder in /challenges. You could try to put this together manually and guess.... or you could just try to run the script.
+
+
+Utilities to work with: sudo, ls, cat.... and how to run a shell script
+
+
+===========overlord15======================
+
+This is a WIP and this is as far as we've gotten so far... check back soon for new levels.
+
+Please leave your "calling card" in the form of a file with your name on it in the "Hall of Victory" folder. If you can make it to the end you should be able to leave a record for future explorers to find... this can be (almost) anything you like to let others know you made it there. Just keep it appropriate - everything is logged, you know.

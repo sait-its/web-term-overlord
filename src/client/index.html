@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Overlord</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1e1e1e;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .terminal-window {
+        width: 100%;
+        height: 100%;
+        background: #1e1e1e;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .title-bar {
+        background: #2d2d2d;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #1a1a1a;
+        position: relative;
+      }
+
+      .title {
+        color: #e5e5e5;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .title .highlight {
+        color: #27c93f;
+        font-family: Monaco, Menlo, 'Courier New', monospace;
+      }
+
+      .progress-container {
+        display: none;
+        align-items: center;
+        margin-left: 16px;
+        gap: 8px;
+      }
+
+      .progress-container.visible {
+        display: flex;
+      }
+
+      .progress-bar {
+        width: 120px;
+        height: 8px;
+        background: #444;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: #27c93f;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+
+      .progress-text {
+        color: #888;
+        font-size: 12px;
+        font-family: Monaco, Menlo, 'Courier New', monospace;
+      }
+
+      .connection-status {
+        margin-left: auto;
+        font-size: 13px;
+        color: #888;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .reconnect-btn {
+        background: #444;
+        color: #e5e5e5;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+        margin-left: 12px;
+      }
+
+      .reconnect-btn:hover {
+        background: #555;
+      }
+
+      .font-controls {
+        display: flex;
+        gap: 4px;
+        margin-right: 16px;
+      }
+
+      .font-btn {
+        background: #444;
+        color: #e5e5e5;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .font-btn:hover {
+        background: #555;
+      }
+
+      .instructions-btn {
+        background: #444;
+        color: #e5e5e5;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+        margin-right: 12px;
+      }
+
+      .instructions-btn:hover {
+        background: #555;
+      }
+
+      .instructions-btn.active {
+        background: #27c93f;
+        color: #1e1e1e;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #888;
+      }
+
+      .status-dot.connected { background: #27c93f; }
+      .status-dot.disconnected { background: #ff5f56; }
+      .status-dot.connecting { background: #ffbd2e; animation: pulse 1s infinite; }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      @keyframes flash {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
+
+      .title-bar-error {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #ff5f56;
+        font-size: 15px;
+        font-weight: 700;
+        animation: flash 0.5s infinite;
+      }
+
+      #terminal-container {
+        flex: 1;
+        background: #1e1e1e;
+        position: relative;
+        overflow: hidden;
+        padding: 8px;
+        display: flex;
+      }
+
+      #terminal-container.instructions-visible {
+        padding: 0;
+      }
+
+      .instructions-pane {
+        width: 30vw;
+        min-width: 20vw;
+        max-width: 40vw;
+        background: #1e1e1e;
+        border-right: none;
+        overflow-y: auto;
+        padding: 16px;
+        font-size: 14px;
+        font-family: Monaco, Menlo, 'Courier New', monospace;
+        line-height: 1.6;
+        color: #d4d4d4;
+        flex-shrink: 0;
+        position: relative;
+      }
+
+      .terminal-wrapper.instructions-visible {
+        padding: 8px;
+      }
+
+      .instructions-pane .username-highlight {
+        color: #27c93f;
+        font-weight: 600;
+      }
+
+      .resize-handle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 5px;
+        height: 100%;
+        background: #3a3a3a;
+        cursor: ew-resize;
+      }
+
+      .resize-handle:hover {
+        background: #27c93f;
+      }
+
+      .instructions-pane h3 {
+        color: #27c93f;
+        margin-bottom: 12px;
+        font-size: 16px;
+      }
+
+      .instructions-pane pre {
+        background: #1e1e1e;
+        padding: 8px;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-family: Monaco, Menlo, 'Courier New', monospace;
+        font-size: 13px;
+        margin: 8px 0;
+      }
+
+      .terminal-wrapper {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .login-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(30, 30, 30, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+
+      .login-form {
+        background: #2d2d2d;
+        padding: 32px;
+        border-radius: 8px;
+        width: 320px;
+      }
+
+      .login-form h2 {
+        color: #e5e5e5;
+        margin-bottom: 24px;
+        font-size: 18px;
+        text-align: center;
+      }
+
+      .login-form input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 16px;
+        border: 1px solid #444;
+        border-radius: 4px;
+        background: #1e1e1e;
+        color: #e5e5e5;
+        font-size: 14px;
+        font-family: Monaco, Menlo, 'Courier New', monospace;
+      }
+
+      .login-form input:focus {
+        outline: none;
+        border-color: #27c93f;
+      }
+
+      .login-form button {
+        width: 100%;
+        padding: 12px;
+        background: #27c93f;
+        color: #1e1e1e;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .login-form button:hover {
+        background: #22b038;
+      }
+
+      .login-form .error {
+        color: #ff5f56;
+        font-size: 14px;
+        margin-bottom: 16px;
+        text-align: center;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 768px) {
+        .title-bar {
+          padding: 8px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="terminal-window">
+      <div class="title-bar">
+        <button class="instructions-btn hidden" id="instructions-btn">Instructions</button>
+        <div class="title" id="title-text">Overlord - Initial username: <span class="highlight">overlord0</span>, password: <span class="highlight">overlord0</span></div>
+        <div class="progress-container" id="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <span class="progress-text" id="progress-text"></span>
+        </div>
+        <span class="title-bar-error hidden" id="title-bar-error"></span>
+        <div class="connection-status">
+          <div class="font-controls">
+            <button class="font-btn" id="font-decrease">-</button>
+            <button class="font-btn" id="font-increase">+</button>
+          </div>
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Disconnected</span>
+          <button class="reconnect-btn" id="reconnect-btn">Reconnect</button>
+        </div>
+      </div>
+      <div id="terminal-container">
+        <div class="instructions-pane hidden" id="instructions-pane">
+          <h3>Instructions</h3>
+          <div id="instructions-content"></div>
+          <div class="resize-handle" id="resize-handle"></div>
+        </div>
+        <div class="terminal-wrapper" id="terminal-wrapper">
+          <div class="login-overlay" id="login-overlay">
+            <form class="login-form" id="login-form">
+              <h2>SSH Login</h2>
+              <div class="error hidden" id="login-error"></div>
+              <input type="text" id="username" placeholder="Username" autocomplete="username" required />
+              <input type="password" id="password" placeholder="Password" autocomplete="current-password" required />
+              <button type="submit">Connect</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { init, Terminal, FitAddon } from '/node_modules/ghostty-web/dist/ghostty-web.js';
+
+      const statusDot = document.getElementById('status-dot');
+      const statusText = document.getElementById('status-text');
+      const reconnectBtn = document.getElementById('reconnect-btn');
+      const fontDecreaseBtn = document.getElementById('font-decrease');
+      const fontIncreaseBtn = document.getElementById('font-increase');
+      const titleBarError = document.getElementById('title-bar-error');
+      const titleText = document.getElementById('title-text');
+      const progressContainer = document.getElementById('progress-container');
+      const progressFill = document.getElementById('progress-fill');
+      const progressText = document.getElementById('progress-text');
+      const instructionsBtn = document.getElementById('instructions-btn');
+      const instructionsPane = document.getElementById('instructions-pane');
+      const instructionsContent = document.getElementById('instructions-content');
+      const resizeHandle = document.getElementById('resize-handle');
+      const terminalWrapper = document.getElementById('terminal-wrapper');
+      const loginOverlay = document.getElementById('login-overlay');
+      const loginForm = document.getElementById('login-form');
+      const loginError = document.getElementById('login-error');
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+
+      const LOGIN_TITLE = 'Overlord - Initial username: <span class="highlight">overlord0</span>, password: <span class="highlight">overlord0</span>';
+      const LOGGED_IN_TITLE = 'Overlord';
+
+      let term;
+      let fitAddon;
+      let ws;
+      let wasmReady = false;
+      let lastUsername = '';
+      let lastPassword = '';
+      let fontSize = 16;
+      let instructionsData = null;
+      let instructionsPaneVisible = false;
+      let isResizing = false;
+      let maxOverlordLevel = 15;
+
+      function setStatus(status, text) {
+        statusDot.className = 'status-dot ' + status;
+        statusText.textContent = text;
+      }
+
+      async function preloadWasm() {
+        await init();
+        wasmReady = true;
+      }
+
+      async function loadInstructions() {
+        try {
+          const response = await fetch('/instructions.txt');
+          if (response.ok) {
+            instructionsData = await response.text();
+            // Find max overlord level from instructions
+            const matches = instructionsData.matchAll(/^===========overlord(\d+)=+$/gm);
+            for (const match of matches) {
+              const level = parseInt(match[1], 10);
+              if (level > maxOverlordLevel) {
+                maxOverlordLevel = level;
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Failed to load instructions:', e);
+        }
+      }
+
+      function getOverlordLevel(username) {
+        const match = username.match(/^overlord(\d+)$/);
+        return match ? parseInt(match[1], 10) : null;
+      }
+
+      function showProgress(username) {
+        const level = getOverlordLevel(username);
+        if (level !== null) {
+          const percentage = (level / maxOverlordLevel) * 100;
+          progressFill.style.width = percentage + '%';
+          progressText.textContent = `${level}/${maxOverlordLevel}`;
+          progressContainer.classList.add('visible');
+        } else {
+          progressContainer.classList.remove('visible');
+        }
+      }
+
+      function getInstructionsForUser(username) {
+        if (!instructionsData) return null;
+        
+        const lines = instructionsData.split('\n');
+        let generalInstructions = '';
+        let userInstructions = '';
+        let currentSection = 'general';
+        let foundUser = false;
+        
+        for (const line of lines) {
+          const match = line.match(/^===========(\w+)=+$/);
+          if (match) {
+            const sectionUser = match[1];
+            if (sectionUser === username) {
+              currentSection = 'user';
+              foundUser = true;
+            } else if (foundUser) {
+              break;
+            } else {
+              currentSection = 'other';
+            }
+          } else {
+            if (currentSection === 'general') {
+              generalInstructions += line + '\n';
+            } else if (currentSection === 'user') {
+              userInstructions += line + '\n';
+            }
+          }
+        }
+        
+        if (!foundUser) return null;
+        
+        return generalInstructions.trim() + '\n\n' + userInstructions.trim();
+      }
+
+      function showInstructionsForUser(username) {
+        const instructions = getInstructionsForUser(username);
+        if (instructions) {
+          // Inject username into the first line with highlight
+          const modifiedInstructions = `Hi, <span class="username-highlight">${username}</span>, ` + 
+            instructions
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/\n/g, '<br>');
+          instructionsContent.innerHTML = modifiedInstructions;
+          instructionsBtn.classList.remove('hidden');
+        } else {
+          instructionsBtn.classList.add('hidden');
+          instructionsPane.classList.add('hidden');
+          instructionsPaneVisible = false;
+        }
+      }
+
+      function toggleInstructions() {
+        instructionsPaneVisible = !instructionsPaneVisible;
+        const container = document.getElementById('terminal-container');
+        if (instructionsPaneVisible) {
+          instructionsPane.classList.remove('hidden');
+          instructionsBtn.classList.add('active');
+          container.classList.add('instructions-visible');
+          terminalWrapper.classList.add('instructions-visible');
+        } else {
+          instructionsPane.classList.add('hidden');
+          instructionsBtn.classList.remove('active');
+          container.classList.remove('instructions-visible');
+          terminalWrapper.classList.remove('instructions-visible');
+        }
+        if (fitAddon) {
+          setTimeout(() => fitAddon.fit(), 50);
+        }
+        if (term) {
+          term.focus();
+        }
+      }
+
+      function initResizeHandle() {
+        resizeHandle.addEventListener('mousedown', (e) => {
+          isResizing = true;
+          document.body.style.cursor = 'ew-resize';
+          document.body.style.userSelect = 'none';
+          e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (!isResizing) return;
+          const containerRect = document.getElementById('terminal-container').getBoundingClientRect();
+          const newWidth = e.clientX - containerRect.left;
+          const vw = window.innerWidth;
+          const minWidth = vw * 0.2;
+          const maxWidth = vw * 0.4;
+          const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+          instructionsPane.style.width = clampedWidth + 'px';
+          if (fitAddon) {
+            fitAddon.fit();
+          }
+        });
+
+        document.addEventListener('mouseup', () => {
+          if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            if (fitAddon) {
+              fitAddon.fit();
+            }
+          }
+        });
+      }
+
+      function initTerminal() {
+        term = new Terminal({
+          cursorBlink: true,
+          fontSize: fontSize,
+          fontFamily: 'Monaco, Menlo, "Courier New", monospace',
+          theme: {
+            background: '#1e1e1e',
+            foreground: '#d4d4d4',
+          },
+          scrollback: 10000,
+        });
+
+        fitAddon = new FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(document.getElementById('terminal-wrapper'));
+        fitAddon.fit();
+        fitAddon.observeResize();
+
+        window.addEventListener('resize', () => fitAddon.fit());
+
+        term.onResize((size) => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'resize', cols: size.cols, rows: size.rows }));
+          }
+        });
+
+        term.onData((data) => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(data);
+          }
+        });
+
+        term.focus();
+      }
+
+      function connect(username, password) {
+        setStatus('connecting', 'Connecting...');
+
+        if (!wasmReady) {
+          showLoginError('Still loading, please wait...');
+          return;
+        }
+
+        lastUsername = username;
+        lastPassword = password;
+
+        // Initialize terminal now (after login form submitted)
+        if (!term) {
+          initTerminal();
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws?cols=${term.cols}&rows=${term.rows}`;
+
+        ws = new WebSocket(wsUrl);
+
+        let authSuccess = false;
+
+        ws.onopen = () => {
+          // Wait for auth_required message
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'auth_required') {
+              ws.send(JSON.stringify({ type: 'auth', username, password }));
+              return;
+            }
+          } catch {
+            // Not JSON, terminal data
+          }
+
+          // Check for SSH error message
+          if (event.data.includes('SSH Error:')) {
+            showLoginError('Authentication failed');
+            return;
+          }
+
+          if (loginOverlay.classList.contains('hidden') === false) {
+            authSuccess = true;
+            loginOverlay.classList.add('hidden');
+            setStatus('connected', 'Connected');
+            titleText.innerHTML = LOGGED_IN_TITLE;
+            showProgress(username);
+            showInstructionsForUser(username);
+            term.focus();
+          }
+          term.write(event.data);
+        };
+
+        ws.onerror = () => {
+          setStatus('disconnected', 'Error');
+          showLoginError('Connection failed');
+        };
+
+        ws.onclose = () => {
+          setStatus('disconnected', 'Disconnected');
+          if (!authSuccess) {
+            // Store username for after reload
+            sessionStorage.setItem('authFailedUsername', username);
+            sessionStorage.setItem('authFailed', 'true');
+            window.location.reload();
+          } else {
+            // Reload page to reset terminal state completely
+            window.location.reload();
+          }
+        };
+      }
+
+      function showTitleBarError(message) {
+        titleBarError.textContent = message;
+        titleBarError.classList.remove('hidden');
+        setTimeout(() => {
+          titleBarError.classList.add('hidden');
+        }, 3000);
+      }
+
+      function showLoginError(message) {
+        loginError.textContent = message;
+        loginError.classList.remove('hidden');
+        loginOverlay.classList.remove('hidden');
+        showTitleBarError(message);
+      }
+
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        loginError.classList.add('hidden');
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+        connect(username, password);
+      });
+
+      reconnectBtn.addEventListener('click', () => {
+        if (ws) {
+          ws.close();
+        }
+        if (lastUsername && lastPassword) {
+          connect(lastUsername, lastPassword);
+        } else {
+          loginOverlay.classList.remove('hidden');
+          usernameInput.focus();
+        }
+      });
+
+      fontDecreaseBtn.addEventListener('click', () => {
+        if (term && fontSize > 8) {
+          fontSize -= 2;
+          term.options.fontSize = fontSize;
+          fitAddon.fit();
+        }
+      });
+
+      fontIncreaseBtn.addEventListener('click', () => {
+        if (term && fontSize < 32) {
+          fontSize += 2;
+          term.options.fontSize = fontSize;
+          fitAddon.fit();
+        }
+      });
+
+      instructionsBtn.addEventListener('click', toggleInstructions);
+
+      // Initialize resize handle
+      initResizeHandle();
+
+      // Preload WASM and instructions
+      preloadWasm();
+      loadInstructions();
+
+      // Check if we're returning from a failed auth
+      if (sessionStorage.getItem('authFailed') === 'true') {
+        const savedUsername = sessionStorage.getItem('authFailedUsername') || '';
+        sessionStorage.removeItem('authFailed');
+        sessionStorage.removeItem('authFailedUsername');
+        usernameInput.value = savedUsername;
+        showLoginError('Authentication failed');
+        passwordInput.focus();
+      } else {
+        usernameInput.focus();
+      }
+    </script>
+  </body>
+</html>
