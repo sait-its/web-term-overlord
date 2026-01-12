@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 import { Client, ClientChannel } from 'ssh2';
+import { log, closeDatabase } from './database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,14 +20,37 @@ const MIME_TYPES: Record<string, string> = {
   '.json': 'application/json',
   '.wasm': 'application/wasm',
   '.txt': 'text/plain',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
 };
 
 interface Session {
   ssh: Client;
   stream: ClientChannel | null;
+  sessionId: string;
+  username?: string;
+  fingerprint?: string;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 const sessions = new Map<WebSocket, Session>();
+
+function generateSessionId(): string {
+  return `ws-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+}
+
+function getClientIp(req: http.IncomingMessage): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0];
+  }
+  return req.socket.remoteAddress || 'unknown';
+}
+
+function getUserAgent(req: http.IncomingMessage): string {
+  return req.headers['user-agent'] || 'unknown';
+}
 
 const httpServer = http.createServer((req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
@@ -42,6 +66,11 @@ const httpServer = http.createServer((req, res) => {
   // Serve ghostty-web from node_modules
   if (pathname.startsWith('/node_modules/')) {
     filePath = path.join(__dirname, '..', '..', pathname);
+  }
+
+  // Serve assets from client/assets
+  if (pathname.startsWith('/assets/')) {
+    filePath = path.join(clientDir, pathname);
   }
 
   const ext = path.extname(filePath);
@@ -76,8 +105,18 @@ wss.on('connection', (ws, req) => {
   const cols = parseInt(url.searchParams.get('cols') || '80', 10);
   const rows = parseInt(url.searchParams.get('rows') || '24', 10);
 
+  const sessionId = generateSessionId();
+  const ipAddress = getClientIp(req);
+  const userAgent = getUserAgent(req);
+
   const ssh = new Client();
-  sessions.set(ws, { ssh, stream: null });
+  sessions.set(ws, { 
+    ssh, 
+    stream: null, 
+    sessionId,
+    ipAddress,
+    userAgent
+  });
 
   let authenticated = false;
 
@@ -88,16 +127,51 @@ wss.on('connection', (ws, req) => {
       try {
         const auth = JSON.parse(message);
         if (auth.type === 'auth') {
+          const session = sessions.get(ws);
+          if (session) {
+            session.username = auth.username;
+            session.fingerprint = auth.fingerprint;
+          }
+
+          log({
+            event_type: 'auth_attempt',
+            username: auth.username,
+            fingerprint: auth.fingerprint,
+            ip_address: session?.ipAddress,
+            user_agent: session?.userAgent,
+            session_id: session?.sessionId,
+            details: 'Authentication attempt'
+          });
+
           ssh.on('ready', () => {
             authenticated = true;
+
+            log({
+              event_type: 'auth_success',
+              username: auth.username,
+              fingerprint: auth.fingerprint,
+              ip_address: session?.ipAddress,
+              user_agent: session?.userAgent,
+              session_id: session?.sessionId,
+              details: 'SSH authentication successful'
+            });
+
             ssh.shell({ term: 'xterm-256color', cols, rows }, (err, stream) => {
               if (err) {
+                log({
+                  event_type: 'error',
+                  username: auth.username,
+                  fingerprint: auth.fingerprint,
+                  ip_address: session?.ipAddress,
+                  user_agent: session?.userAgent,
+                  session_id: session?.sessionId,
+                  details: `Failed to start shell: ${err.message}`
+                });
                 ws.send(`\r\n\x1b[31mFailed to start shell: ${err.message}\x1b[0m\r\n`);
                 ws.close();
                 return;
               }
 
-              const session = sessions.get(ws);
               if (session) {
                 session.stream = stream;
               }
@@ -121,6 +195,15 @@ wss.on('connection', (ws, req) => {
           });
 
           ssh.on('error', (err) => {
+            log({
+              event_type: 'auth_failure',
+              username: auth.username,
+              fingerprint: auth.fingerprint,
+              ip_address: session?.ipAddress,
+              user_agent: session?.userAgent,
+              session_id: session?.sessionId,
+              details: `SSH error: ${err.message}`
+            });
             ws.send(`\r\n\x1b[31mSSH Error: ${err.message}\x1b[0m\r\n`);
             ws.close();
           });
@@ -194,5 +277,6 @@ process.on('SIGINT', () => {
     ws.close();
   }
   wss.close();
+  closeDatabase();
   process.exit(0);
 });

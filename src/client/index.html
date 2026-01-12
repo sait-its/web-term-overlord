@@ -120,10 +120,149 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        padding: 4px;
       }
 
-      .font-btn:hover {
+      .font-btn:hover:not(:disabled) {
         background: #555;
+      }
+
+      .font-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.3;
+      }
+
+      .font-btn img {
+        width: 100%;
+        height: 100%;
+        filter: brightness(0) invert(1);
+      }
+
+      .fingerprint-btn {
+        background: #444;
+        color: #e5e5e5;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        padding: 4px;
+      }
+
+      .fingerprint-btn:hover {
+        background: #555;
+      }
+
+      .fingerprint-btn img {
+        width: 100%;
+        height: 100%;
+        filter: brightness(0) invert(1);
+      }
+
+      .fingerprint-dialog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+      }
+
+      .fingerprint-dialog-content {
+        background: #2d2d2d;
+        padding: 24px;
+        border-radius: 8px;
+        text-align: center;
+        min-width: 280px;
+        position: relative;
+      }
+
+      .fingerprint-dialog-content .close-x {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #444;
+        border: none;
+        color: #e5e5e5;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+
+      .fingerprint-dialog-content .close-x:hover {
+        background: #555;
+      }
+
+      .fingerprint-dialog-content h3 {
+        color: #e5e5e5;
+        margin-bottom: 16px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .fingerprint-dialog-content .fingerprint-value {
+        color: #27c93f;
+        font-family: Monaco, Menlo, 'Courier New', monospace;
+        font-size: 18px;
+        letter-spacing: 2px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .fingerprint-dialog-content .fingerprint-value .copy-icon {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        filter: brightness(0) invert(0.6);
+        transition: filter 0.2s;
+      }
+
+      .fingerprint-dialog-content .fingerprint-value .copy-icon:hover {
+        filter: brightness(0) invert(1);
+      }
+
+      .fingerprint-dialog-content .dialog-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+      }
+
+      .fingerprint-dialog-content .dialog-btn {
+        background: #444;
+        color: #e5e5e5;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      .fingerprint-dialog-content .dialog-btn:hover {
+        background: #555;
+      }
+
+      .fingerprint-dialog-content .hint {
+        color: #888;
+        font-size: 11px;
+        margin-top: 12px;
       }
 
       .instructions-btn {
@@ -342,13 +481,25 @@
         </div>
         <span class="title-bar-error hidden" id="title-bar-error"></span>
         <div class="connection-status">
+          <button class="fingerprint-btn" id="fingerprint-btn" title="Show Fingerprint"><img src="/assets/fingerprint.png" alt="Fingerprint"></button>
           <div class="font-controls">
-            <button class="font-btn" id="font-decrease">-</button>
-            <button class="font-btn" id="font-increase">+</button>
+            <button class="font-btn" id="font-decrease"><img src="/assets/font-decrease.png" alt="Decrease font size"></button>
+            <button class="font-btn" id="font-increase"><img src="/assets/font-increase.png" alt="Increase font size"></button>
           </div>
           <span class="status-dot" id="status-dot"></span>
           <span id="status-text">Disconnected</span>
           <button class="reconnect-btn" id="reconnect-btn">Reconnect</button>
+        </div>
+      </div>
+      <div id="fingerprint-dialog" class="fingerprint-dialog hidden">
+        <div class="fingerprint-dialog-content">
+          <button class="close-x" id="fingerprint-close-btn">&times;</button>
+          <h3>Browser Fingerprint</h3>
+          <div class="fingerprint-value">
+            <span id="fingerprint-value">Loading...</span>
+            <img src="/assets/copy.png" alt="Copy" class="copy-icon" id="fingerprint-copy-btn" title="Copy to clipboard">
+          </div>
+          <div class="hint">Press q to close</div>
         </div>
       </div>
       <div id="terminal-container">
@@ -394,9 +545,16 @@
       const loginError = document.getElementById('login-error');
       const usernameInput = document.getElementById('username');
       const passwordInput = document.getElementById('password');
+      const fingerprintBtn = document.getElementById('fingerprint-btn');
+      const fingerprintDialog = document.getElementById('fingerprint-dialog');
+      const fingerprintValue = document.getElementById('fingerprint-value');
+      const fingerprintCloseBtn = document.getElementById('fingerprint-close-btn');
+      const fingerprintCopyBtn = document.getElementById('fingerprint-copy-btn');
 
       const LOGIN_TITLE = 'Overlord - Initial username: <span class="highlight">overlord0</span>, password: <span class="highlight">overlord0</span>';
       const LOGGED_IN_TITLE = 'Overlord';
+      const MIN_FONT_SIZE = 12;
+      const MAX_FONT_SIZE = 28;
 
       let term;
       let fitAddon;
@@ -409,6 +567,28 @@
       let instructionsPaneVisible = false;
       let isResizing = false;
       let maxOverlordLevel = 15;
+      let browserFingerprint = '';
+      let fpPromise = null;
+
+      async function generateFingerprint() {
+        try {
+          if (!fpPromise) {
+            const FingerprintJS = await import('/node_modules/@fingerprintjs/fingerprintjs/dist/fp.esm.js');
+            fpPromise = FingerprintJS.load();
+          }
+          const fp = await fpPromise;
+          const result = await fp.get();
+          return result.visitorId;
+        } catch (error) {
+          console.error('Fingerprint generation error:', error);
+          return 'error-' + Date.now();
+        }
+      }
+
+      function updateFontButtonStates() {
+        fontDecreaseBtn.disabled = fontSize <= MIN_FONT_SIZE;
+        fontIncreaseBtn.disabled = fontSize >= MAX_FONT_SIZE;
+      }
 
       function setStatus(status, text) {
         statusDot.className = 'status-dot ' + status;
@@ -488,19 +668,32 @@
         
         if (!foundUser) return null;
         
-        return generalInstructions.trim() + '\n\n' + userInstructions.trim();
+        return {
+          general: generalInstructions.trim(),
+          user: userInstructions.trim()
+        };
       }
 
       function showInstructionsForUser(username) {
         const instructions = getInstructionsForUser(username);
         if (instructions) {
-          // Inject username into the first line with highlight
-          const modifiedInstructions = `Hi, <span class="username-highlight">${username}</span>, ` + 
-            instructions
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-              .replace(/\n/g, '<br>');
+          const generalHtml = instructions.general
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+          
+          const userHtml = instructions.user
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+          
+          const modifiedInstructions = 
+            `Hi, <span class="username-highlight">${username}</span>, ${generalHtml}` +
+            '<hr style="border: none; border-top: 1px solid #3a3a3a; margin: 20px 0;">' +
+            userHtml;
+          
           instructionsContent.innerHTML = modifiedInstructions;
           instructionsBtn.classList.remove('hidden');
         } else {
@@ -599,81 +792,98 @@
         });
 
         term.focus();
+        updateFontButtonStates();
       }
 
-      function connect(username, password) {
-        setStatus('connecting', 'Connecting...');
+      async function connect(username, password) {
+        try {
+          setStatus('connecting', 'Connecting...');
 
-        if (!wasmReady) {
-          showLoginError('Still loading, please wait...');
-          return;
-        }
-
-        lastUsername = username;
-        lastPassword = password;
-
-        // Initialize terminal now (after login form submitted)
-        if (!term) {
-          initTerminal();
-        }
-
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws?cols=${term.cols}&rows=${term.rows}`;
-
-        ws = new WebSocket(wsUrl);
-
-        let authSuccess = false;
-
-        ws.onopen = () => {
-          // Wait for auth_required message
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data);
-            if (msg.type === 'auth_required') {
-              ws.send(JSON.stringify({ type: 'auth', username, password }));
-              return;
-            }
-          } catch {
-            // Not JSON, terminal data
-          }
-
-          // Check for SSH error message
-          if (event.data.includes('SSH Error:')) {
-            showLoginError('Authentication failed');
+          if (!wasmReady) {
+            showLoginError('Still loading, please wait...');
             return;
           }
 
-          if (loginOverlay.classList.contains('hidden') === false) {
-            authSuccess = true;
-            loginOverlay.classList.add('hidden');
-            setStatus('connected', 'Connected');
-            titleText.innerHTML = LOGGED_IN_TITLE;
-            showProgress(username);
-            showInstructionsForUser(username);
-            term.focus();
-          }
-          term.write(event.data);
-        };
+          lastUsername = username;
+          lastPassword = password;
 
-        ws.onerror = () => {
-          setStatus('disconnected', 'Error');
-          showLoginError('Connection failed');
-        };
-
-        ws.onclose = () => {
-          setStatus('disconnected', 'Disconnected');
-          if (!authSuccess) {
-            // Store username for after reload
-            sessionStorage.setItem('authFailedUsername', username);
-            sessionStorage.setItem('authFailed', 'true');
-            window.location.reload();
-          } else {
-            // Reload page to reset terminal state completely
-            window.location.reload();
+          // Initialize terminal now (after login form submitted)
+          if (!term) {
+            initTerminal();
           }
-        };
+
+          // Generate fingerprint if not already done
+          if (!browserFingerprint) {
+            console.log('Generating fingerprint...');
+            browserFingerprint = await generateFingerprint();
+            console.log('Fingerprint generated:', browserFingerprint.substring(0, 16) + '...');
+          }
+
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          const wsUrl = `${protocol}//${window.location.host}/ws?cols=${term.cols}&rows=${term.rows}`;
+
+          console.log('Connecting to WebSocket:', wsUrl);
+          ws = new WebSocket(wsUrl);
+
+          let authSuccess = false;
+
+          ws.onopen = () => {
+            console.log('WebSocket opened');
+          };
+
+          ws.onmessage = (event) => {
+            try {
+              const msg = JSON.parse(event.data);
+              if (msg.type === 'auth_required') {
+                console.log('Auth required, sending credentials with fingerprint');
+                ws.send(JSON.stringify({ type: 'auth', username, password, fingerprint: browserFingerprint }));
+                return;
+              }
+            } catch {
+              // Not JSON, terminal data
+            }
+
+            // Check for SSH error message
+            if (event.data.includes('SSH Error:')) {
+              showLoginError('Authentication failed');
+              return;
+            }
+
+            if (loginOverlay.classList.contains('hidden') === false) {
+              authSuccess = true;
+              loginOverlay.classList.add('hidden');
+              setStatus('connected', 'Connected');
+              titleText.innerHTML = LOGGED_IN_TITLE;
+              showProgress(username);
+              showInstructionsForUser(username);
+              term.focus();
+            }
+            term.write(event.data);
+          };
+
+          ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            setStatus('disconnected', 'Error');
+            showLoginError('Connection failed');
+          };
+
+          ws.onclose = () => {
+            console.log('WebSocket closed');
+            setStatus('disconnected', 'Disconnected');
+            if (!authSuccess) {
+              // Store username for after reload
+              sessionStorage.setItem('authFailedUsername', username);
+              sessionStorage.setItem('authFailed', 'true');
+              window.location.reload();
+            } else {
+              // Reload page to reset terminal state completely
+              window.location.reload();
+            }
+          };
+        } catch (error) {
+          console.error('Connection error:', error);
+          showLoginError('Connection failed: ' + error.message);
+        }
       }
 
       function showTitleBarError(message) {
@@ -712,22 +922,93 @@
       });
 
       fontDecreaseBtn.addEventListener('click', () => {
-        if (term && fontSize > 8) {
+        if (term && fontSize > MIN_FONT_SIZE) {
           fontSize -= 2;
           term.options.fontSize = fontSize;
           fitAddon.fit();
+          updateFontButtonStates();
         }
       });
 
       fontIncreaseBtn.addEventListener('click', () => {
-        if (term && fontSize < 32) {
+        if (term && fontSize < MAX_FONT_SIZE) {
           fontSize += 2;
           term.options.fontSize = fontSize;
           fitAddon.fit();
+          updateFontButtonStates();
         }
       });
 
       instructionsBtn.addEventListener('click', toggleInstructions);
+
+      // Fingerprint dialog
+      async function showFingerprintDialog() {
+        if (!browserFingerprint) {
+          browserFingerprint = await generateFingerprint();
+        }
+        const shortFingerprint = browserFingerprint.substring(0, 12);
+        fingerprintValue.textContent = shortFingerprint;
+        fingerprintDialog.classList.remove('hidden');
+        // Auto-copy to clipboard
+        try {
+          await navigator.clipboard.writeText(shortFingerprint);
+        } catch (e) {
+          console.error('Failed to copy to clipboard:', e);
+        }
+      }
+
+      function closeFingerprintDialog() {
+        fingerprintDialog.classList.add('hidden');
+        if (term) {
+          term.focus();
+        }
+      }
+
+      async function copyFingerprint() {
+        const shortFingerprint = browserFingerprint.substring(0, 12);
+        
+        const doCopy = async () => {
+          try {
+            await navigator.clipboard.writeText(shortFingerprint);
+            return true;
+          } catch (e) {
+            // Fallback for older browsers or non-HTTPS
+            const textArea = document.createElement('textarea');
+            textArea.value = shortFingerprint;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+              document.execCommand('copy');
+              document.body.removeChild(textArea);
+              return true;
+            } catch (err) {
+              console.error('Fallback copy failed:', err);
+              document.body.removeChild(textArea);
+              return false;
+            }
+          }
+        };
+
+        const copied = await doCopy();
+        if (copied) {
+          fingerprintCopyBtn.style.filter = 'brightness(0) invert(0.4) sepia(1) saturate(5) hue-rotate(90deg)';
+          setTimeout(() => {
+            fingerprintCopyBtn.style.filter = '';
+            closeFingerprintDialog();
+          }, 1500);
+        }
+      }
+
+      fingerprintBtn.addEventListener('click', showFingerprintDialog);
+      fingerprintCloseBtn.addEventListener('click', closeFingerprintDialog);
+      fingerprintCopyBtn.addEventListener('click', copyFingerprint);
+      document.addEventListener('keydown', (e) => {
+        if (!fingerprintDialog.classList.contains('hidden') && (e.key === 'q' || e.key === 'Q')) {
+          closeFingerprintDialog();
+        }
+      });
 
       // Initialize resize handle
       initResizeHandle();

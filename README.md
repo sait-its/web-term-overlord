@@ -6,7 +6,7 @@ A web-based SSH terminal client using [ghostty-web](https://github.com/coder/gho
 
 - Full terminal emulation via ghostty-web (WASM-based, xterm.js compatible)
 - SSH connection to local or remote servers
-- Adjustable font size (+/- buttons)
+- Adjustable font size
 - Dark theme
 - Connection status indicator
 - Auto-reconnect support
@@ -14,6 +14,9 @@ A web-based SSH terminal client using [ghostty-web](https://github.com/coder/gho
 - **Instructions panel** - Toggleable left pane with per-user instructions
 - **Progress bar** - Shows user progress through overlord levels (e.g., 5/15)
 - Resizable instructions pane (drag to resize, 20-40% viewport width)
+- **Browser fingerprinting** - Unique visitor identification using FingerprintJS
+- **Authentication logging** - SQLite-based logging of auth events
+- **Fingerprint viewer** - Click fingerprint button to view/copy your browser fingerprint
 
 ## Quick Start
 
@@ -61,25 +64,37 @@ Open http://localhost:8080 in your browser.
 
 ## Docker
 
-The Docker image uses Bun as the runtime for better performance.
+The Docker image uses Bun as the runtime for better performance. Multi-architecture builds are supported for both x64 (amd64) and ARM64 (aarch64).
 
 ### Build
 
 ```bash
-docker build -t overlord .
+# Build for current architecture
+docker build -t web-term-overlord .
+
+# Build multi-arch image (requires docker buildx)
+# First, create a builder if you haven't already:
+docker buildx create --name multiarch --driver docker-container --use
+
+# Build for both amd64 and arm64 with a single tag:
+docker buildx build --platform linux/amd64,linux/arm64 -t web-term-overlord:latest --push .
+
+# Or build and load locally (single arch only):
+docker buildx build --platform linux/amd64 -t web-term-overlord:latest --load .
+docker buildx build --platform linux/arm64 -t web-term-overlord:latest --load .
 ```
 
 ### Run
 
 ```bash
 # Connect to host's SSH server
-docker run -p 8080:8080 --add-host=host.docker.internal:host-gateway overlord
+docker run -p 8080:8080 --add-host=host.docker.internal:host-gateway web-term-overlord
 
 # Or specify a different SSH server
-docker run -p 8080:8080 -e BACKEND_SSH_HOST=192.168.1.100 -e BACKEND_SSH_PORT=22 overlord
+docker run -p 8080:8080 -e BACKEND_SSH_HOST=192.168.1.100 -e BACKEND_SSH_PORT=22 web-term-overlord
 
 # Custom web port
-docker run -p 3000:3000 -e WEB_TERM_PORT=3000 overlord
+docker run -p 3000:3000 -e WEB_TERM_PORT=3000 web-term-overlord
 ```
 
 ## Usage
@@ -90,7 +105,8 @@ docker run -p 3000:3000 -e WEB_TERM_PORT=3000 overlord
 
 ### UI Features
 
-- **Font size**: Use +/- buttons in the title bar to adjust terminal font size (8-32px)
+- **Font size**: Use +/- buttons in the title bar to adjust terminal font size (12-28px)
+- **Fingerprint**: Click the fingerprint icon to view your browser fingerprint (first 12 chars). Click the copy icon to copy it to clipboard. Press `q` or click X to close.
 - **Instructions**: Click "Instructions" button to toggle the left panel with user-specific guidance
 - **Progress bar**: Shows current level progress (e.g., "5/15" for overlord5)
 - **Reconnect**: Click "Reconnect" button to re-establish connection
@@ -123,20 +139,23 @@ The application consists of two main components:
 - SSH client (ssh2) connecting to backend SSH server
 - Session management for multiple concurrent users
 - Terminal resize handling
+- Authentication logging to SQLite database
 
 ### Client (`src/client/index.html`)
 - Single-page application with embedded styles and scripts
 - ghostty-web terminal emulator (WASM-based)
 - Login form with username/password authentication
+- Browser fingerprinting using FingerprintJS library
+- Fingerprint viewer dialog with copy-to-clipboard functionality
 - Instructions panel with per-user content parsing
 - Progress bar showing user level advancement
 - Font size controls and reconnection handling
 
 ```
-┌─────────────────┐     WebSocket      ┌─────────────────┐      SSH       ┌─────────────────┐
-│                 │ ◄────────────────► │                 │ ◄────────────► │                 │
-│  Browser        │                    │  Node.js/Bun    │                │  SSH Server     │
-│  (ghostty-web)  │                    │  Server         │                │  (port 2222)    │
+┌─────────────────┐                    ┌─────────────────┐                ┌─────────────────┐
+│                 │                    │                 │                │                 │
+│  Browser        │     WebSocket      │  Node.js/Bun    │      SSH       │  SSH Server     │
+│  (ghostty-web)  │ ◄────────────────► │  Server         │ ◄────────────► │  (port 2222)    │
 │                 │                    │                 │                │                 │
 └─────────────────┘                    └─────────────────┘                └─────────────────┘
 ```
