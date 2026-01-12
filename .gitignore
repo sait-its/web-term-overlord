@@ -1,6 +1,10 @@
 # OCI Image builder
 build.sh
 
+# docker-compose files
+docker-compose.yml
+docker-compose.yaml
+
 # Logs
 logs
 logs.db
