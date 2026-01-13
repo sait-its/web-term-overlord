@@ -82,7 +82,7 @@ sqlite3 logs.db "SELECT timestamp, username, ip_address, fingerprint FROM logs W
 
 Each log entry contains:
 - `id`: Auto-incrementing unique identifier
-- `timestamp`: ISO 8601 format (UTC)
+- `timestamp`: ISO 8601 format with timezone offset (e.g., `2026-01-12T20:18:06-07:00`)
 - `event_type`: Type of event (see table above)
 - `username`: SSH username
 - `fingerprint`: FingerprintJS visitor ID
@@ -95,7 +95,7 @@ Each log entry contains:
 
 ```
 id: 1
-timestamp: 2026-01-11T20:00:00.000Z
+timestamp: 2026-01-11T20:00:00-07:00
 event_type: auth_success
 username: overlord0
 fingerprint: abc123def456
@@ -110,7 +110,8 @@ session_id: ws-1736625600000-abc123def456
 - Fingerprints are generated client-side using FingerprintJS
 - IP addresses are logged for security monitoring
 - User agents are stored for compatibility tracking
-- All timestamps are in UTC
+- Timestamps use the configured timezone (default: `America/Edmonton`)
+- Set `TIMEZONE` environment variable to customize (e.g., `TIMEZONE=America/Vancouver`)
 
 ## Maintenance
 
@@ -121,6 +122,10 @@ sqlite3 logs.db ".backup logs_backup.db"
 ```
 
 ### Clear Old Logs
+
+Logs older than 35 days are automatically deleted every 8 hours (and on server startup).
+
+Manual cleanup:
 
 ```bash
 # Delete logs older than 30 days

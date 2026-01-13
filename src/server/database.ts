@@ -8,6 +8,27 @@ const __dirname = path.dirname(__filename);
 const dbPath = path.join(__dirname, '..', '..', 'logs.db');
 const db = new Database(dbPath);
 
+const TIMEZONE = process.env.TIMEZONE || 'America/Edmonton';
+
+function getTimestamp(): string {
+  const date = new Date();
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZoneName: 'longOffset',
+  };
+  const parts = new Intl.DateTimeFormat('en-CA', options).formatToParts(date);
+  const get = (type: string) => parts.find(p => p.type === type)?.value || '';
+  const offset = get('timeZoneName').replace('GMT', '');
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}${offset}`;
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,8 +63,26 @@ const insertStmt = db.prepare(`
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
+const deleteOldStmt = db.prepare(`
+  DELETE FROM logs WHERE timestamp < datetime('now', '-35 days')
+`);
+
+function cleanupOldLogs(): void {
+  const result = deleteOldStmt.run();
+  if (result.changes > 0) {
+    console.log(`Cleaned up ${result.changes} log records older than 35 days`);
+  }
+}
+
+// Run cleanup every 8 hours
+const CLEANUP_INTERVAL_MS = 8 * 60 * 60 * 1000;
+const cleanupTimer = setInterval(cleanupOldLogs, CLEANUP_INTERVAL_MS);
+
+// Run cleanup on startup
+cleanupOldLogs();
+
 export function log(entry: LogEntry): void {
-  const timestamp = new Date().toISOString();
+  const timestamp = getTimestamp();
   insertStmt.run(
     timestamp,
     entry.event_type,
@@ -57,6 +96,7 @@ export function log(entry: LogEntry): void {
 }
 
 export function closeDatabase(): void {
+  clearInterval(cleanupTimer);
   db.close();
 }
 
