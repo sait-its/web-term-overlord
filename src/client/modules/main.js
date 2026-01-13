@@ -29,6 +29,9 @@ async function init() {
   
   // Setup callback for UI resize to fit terminal
   ui.setFitCallback(() => terminal.fit());
+
+  // Initialize resize handle for instructions pane
+  ui.initResizeHandle();
 }
 
 async function loadInstructions() {

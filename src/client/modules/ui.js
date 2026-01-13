@@ -213,6 +213,54 @@ export function closeFingerprintDialog() {
   elements.fingerprintDialog.classList.add('hidden');
 }
 
+// Resize handle drag logic
+export function initResizeHandle() {
+  const handle = elements.resizeHandle;
+  const pane = elements.instructionsPane;
+  let isDragging = false;
+
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    const containerRect = elements.terminalContainer.getBoundingClientRect();
+    const isMobile = window.innerWidth <= 640;
+
+    if (isMobile) {
+      // Vertical resize on mobile
+      const containerHeight = containerRect.height;
+      const offsetFromBottom = containerRect.bottom - e.clientY;
+      const percentage = (offsetFromBottom / containerHeight) * 100;
+      const clampedPercentage = Math.min(60, Math.max(20, percentage));
+      pane.style.height = clampedPercentage + 'vh';
+    } else {
+      // Horizontal resize on desktop
+      const containerWidth = containerRect.width;
+      const offsetFromLeft = e.clientX - containerRect.left;
+      const percentage = (offsetFromLeft / containerWidth) * 100;
+      const clampedPercentage = Math.min(40, Math.max(20, percentage));
+      pane.style.width = clampedPercentage + 'vw';
+    }
+
+    if (fitCallback) fitCallback();
+  };
+
+  const onMouseUp = () => {
+    isDragging = false;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  };
+
+  handle.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    e.preventDefault();
+    document.body.style.cursor = window.innerWidth <= 640 ? 'ns-resize' : 'ew-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  });
+}
+
 export async function copyFingerprint(fingerprint) {
     const shortFingerprint = fingerprint.substring(0, 12);
     try {
