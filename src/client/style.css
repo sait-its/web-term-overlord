@@ -370,7 +370,7 @@ body {
 }
 
 .terminal-wrapper.instructions-visible {
-  padding: 1px;
+  padding: 8px;
 }
 
 .instructions-pane .username-highlight {

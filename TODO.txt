@@ -1,2 +1,0 @@
-- when AuthN fails, SSH Login interface should display "Authentication failed" message and username input should remain the same, 
-but clear out password input.
