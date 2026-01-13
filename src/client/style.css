@@ -52,7 +52,7 @@ body {
 
 .title .highlight {
   color: #27c93f;
-  font-family: 'Inconsolata', Monaco, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
 }
 
 .progress-container {
@@ -88,7 +88,7 @@ body {
 .progress-text {
   color: #888;
   font-size: 12px;
-  font-family: 'Inconsolata', Monaco, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
 }
 
 .progress-text.gold {
@@ -240,7 +240,7 @@ body {
 
 .fingerprint-dialog-content .fingerprint-value {
   color: #27c93f;
-  font-family: 'Inconsolata', Monaco, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
   font-size: 18px;
   letter-spacing: 2px;
   margin-bottom: 20px;
@@ -362,7 +362,7 @@ body {
   overflow-y: auto;
   padding: 16px;
   font-size: 16px;
-  font-family: 'Inconsolata', Monaco, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
   line-height: 1.6;
   color: #d4d4d4;
   flex-shrink: 0;
@@ -403,7 +403,7 @@ body {
   padding: 8px;
   border-radius: 4px;
   overflow-x: auto;
-  font-family: 'Inconsolata', Monaco, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
   font-size: 13px;
   margin: 8px 0;
 }
@@ -486,7 +486,7 @@ body {
   background: #1e1e1e;
   color: #e5e5e5;
   font-size: 14px;
-  font-family: 'Inconsolata', Monaco, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
 }
 
 .login-form input:focus {

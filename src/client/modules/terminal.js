@@ -15,8 +15,8 @@ export function isWasmReady() { return wasmReady; }
 export function initTerminal(containerElement, options = {}) {
   term = new Terminal({
     cursorBlink: true,
-    fontSize: options.fontSize || 16,
-    fontFamily: '"Inconsolata", Monaco, "Courier New", monospace',
+    fontSize: options.fontSize || 18,
+    fontFamily: '"Geist Mono", Monaco, "Courier New", monospace',
     theme: {
       background: '#1e1e1e',
       foreground: '#d4d4d4',
