@@ -1,15 +1,22 @@
 export let ws;
 let lastUsername = '';
 let lastPassword = '';
+let manualDisconnect = false;
 
 export function getLastCredentials() { 
     return { username: lastUsername, password: lastPassword }; 
+}
+
+export function clearCredentials() {
+    lastUsername = '';
+    lastPassword = '';
 }
 
 export function connect(username, password, terminalDims, fingerprint, callbacks) {
     // callbacks schema:
     // { setStatus, onAuthSuccess, onData, showLoginError }
     
+    manualDisconnect = false;
     lastUsername = username;
     lastPassword = password;
     
@@ -61,6 +68,10 @@ export function connect(username, password, terminalDims, fingerprint, callbacks
     ws.onclose = () => {
          console.log('WebSocket closed');
          callbacks.setStatus('disconnected', 'Disconnected');
+         if (manualDisconnect) {
+             // Manual reconnect - don't show error or reload
+             return;
+         }
          if (!authSuccess) {
              callbacks.showLoginError(lastError || 'Authentication failed');
          } else {
@@ -83,5 +94,6 @@ export function sendResize(cols, rows) {
 }
 
 export function close() {
+    manualDisconnect = true;
     if (ws) ws.close();
 }

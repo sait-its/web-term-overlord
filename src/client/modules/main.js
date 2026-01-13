@@ -70,15 +70,8 @@ function setupEventListeners() {
     });
     
     // Reconnect
-    ui.elements.reconnectBtn.addEventListener('click', async () => {
-        connection.close();
-        const creds = connection.getLastCredentials();
-        if (creds.username && creds.password) {
-            connectToOverlord(creds.username, creds.password);
-        } else {
-            ui.elements.loginOverlay.classList.remove('hidden');
-            ui.elements.usernameInput.focus();
-        }
+    ui.elements.reconnectBtn.addEventListener('click', () => {
+        window.location.reload();
     });
 
     // Font controls
@@ -88,6 +81,7 @@ function setupEventListeners() {
             terminal.term.options.fontSize = fontSize;
             terminal.fit();
             ui.updateFontButtonStates(fontSize);
+            ui.setInstructionsFontSize(fontSize);
         }
     });
 
@@ -97,6 +91,7 @@ function setupEventListeners() {
             terminal.term.options.fontSize = fontSize;
             terminal.fit();
             ui.updateFontButtonStates(fontSize);
+            ui.setInstructionsFontSize(fontSize);
         }
     });
     

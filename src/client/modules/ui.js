@@ -42,6 +42,10 @@ export function updateFontButtonStates(fontSize) {
   elements.fontIncreaseBtn.disabled = fontSize >= MAX_FONT_SIZE;
 }
 
+export function setInstructionsFontSize(fontSize) {
+  elements.instructionsPane.style.fontSize = fontSize + 'px';
+}
+
 export function setStatus(status, text) {
   elements.statusDot.className = 'status-dot ' + status;
   elements.statusText.textContent = text;
@@ -68,10 +72,17 @@ export function restoreLoginState() {
     elements.loginError.textContent = storedError;
     elements.loginError.classList.remove('hidden');
     sessionStorage.removeItem('loginError');
+  } else {
+    elements.loginError.classList.add('hidden');
   }
   if (storedUsername) {
     elements.usernameInput.value = storedUsername;
     sessionStorage.removeItem('lastUsername');
+  } else {
+    elements.usernameInput.value = '';
+  }
+  elements.passwordInput.value = '';
+  if (storedUsername) {
     elements.passwordInput.focus();
   } else {
     elements.usernameInput.focus();
