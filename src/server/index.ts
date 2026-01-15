@@ -94,8 +94,9 @@ const httpServer = http.createServer(async (req, res) => {
   if (pathname === '/leaderboard/dashboard' && req.method === 'GET') {
     const topPerformers = getTopPerformers(10);
     const recentLogins = getRecentSuccessfulLogins(10);
+    const timezone = process.env.TIMEZONE || 'America/Edmonton';
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ topPerformers, recentLogins }));
+    res.end(JSON.stringify({ topPerformers, recentLogins, timezone }));
     return;
   }
 

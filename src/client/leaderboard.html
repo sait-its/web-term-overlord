@@ -264,6 +264,9 @@
       border-bottom: 1px solid #3e3e3e;
       font-size: 13px;
     }
+    th:last-child, td:last-child {
+      width: 250px;
+    }
     th {
       background: #1e1e1e;
       color: #27c93f;
@@ -336,6 +339,8 @@
     const topPerformers = document.getElementById('topPerformers');
     const recentLogins = document.getElementById('recentLogins');
 
+    let timezone = 'America/Edmonton';
+
     loadDashboard();
 
     searchBtn.addEventListener('click', searchLogs);
@@ -372,10 +377,21 @@
 
     window.addEventListener('resize', positionCloseBtn);
 
+    function getLevelColor(level) {
+      const ratio = level / 15;
+      const green = { r: 39, g: 201, b: 63 };
+      const gold = { r: 255, g: 215, b: 0 };
+      const r = Math.round(green.r + (gold.r - green.r) * ratio);
+      const g = Math.round(green.g + (gold.g - green.g) * ratio);
+      const b = Math.round(green.b + (gold.b - green.b) * ratio);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
     async function loadDashboard() {
       try {
         const res = await fetch('/leaderboard/dashboard');
         const data = await res.json();
+        timezone = data.timezone || 'America/Edmonton';
         renderTopPerformers(data.topPerformers);
         renderRecentLogins(data.recentLogins);
       } catch (err) {
@@ -388,16 +404,6 @@
       if (performers.length === 0) {
         topPerformers.innerHTML = '<div class="empty-state">No data yet</div>';
         return;
-      }
-
-      function getLevelColor(level) {
-        const ratio = level / 15;
-        const green = { r: 39, g: 201, b: 63 }; // #27c93f
-        const gold = { r: 255, g: 215, b: 0 }; // #ffd700
-        const r = Math.round(green.r + (gold.r - green.r) * ratio);
-        const g = Math.round(green.g + (gold.g - green.g) * ratio);
-        const b = Math.round(green.b + (gold.b - green.b) * ratio);
-        return `rgb(${r}, ${g}, ${b})`;
       }
 
       const medals = ['🥇', '🥈', '🥉'];
@@ -455,27 +461,54 @@
         const data = await res.json();
 
         if (data.logs && data.logs.length > 0) {
+          const tzAbbr = new Intl.DateTimeFormat('en-US', { timeZone: timezone, timeZoneName: 'short' })
+            .formatToParts(new Date())
+            .find(part => part.type === 'timeZoneName')?.value || '';
           searchResults.innerHTML = `
             <table>
               <thead>
                 <tr>
-                  <th>Timestamp</th>
+                  <th>Timestamp ${tzAbbr}</th>
                   <th>Event</th>
                   <th>Username</th>
-                  <th>IP Address</th>
                   <th>Details</th>
                 </tr>
               </thead>
               <tbody>
-                ${data.logs.map(log => `
+                ${data.logs.map(log => {
+                  let eventColor = '#d4d4d4';
+                  if (log.event_type === 'auth_success') eventColor = '#27c93f';
+                  else if (log.event_type === 'auth_failure') eventColor = '#ff4444';
+                  else if (log.event_type === 'connection_error') eventColor = '#ffcc00';
+                  
+                  let usernameColor = '#d4d4d4';
+                  let usernameStyle = '';
+                  if (log.event_type === 'auth_success') {
+                    const match = log.username?.match(/^overlord(\d+)$/);
+                    if (match) {
+                      const level = parseInt(match[1]);
+                      usernameColor = getLevelColor(level);
+                      if (level === 15) {
+                        usernameStyle = `color: ${usernameColor}; text-shadow: 0 0 10px ${usernameColor};`;
+                      } else {
+                        usernameStyle = `color: ${usernameColor}`;
+                      }
+                    } else {
+                      usernameStyle = `color: ${usernameColor}`;
+                    }
+                  } else {
+                    usernameStyle = `color: ${usernameColor}`;
+                  }
+                  
+                  return `
                   <tr>
-                    <td>${log.timestamp}</td>
-                    <td>${log.event_type}</td>
-                    <td>${log.username || '-'}</td>
-                    <td>${log.ip_address || '-'}</td>
+                    <td>${formatTimestampNoTZ(log.timestamp)}</td>
+                    <td style="color: ${eventColor}">${log.event_type}</td>
+                    <td style="${usernameStyle}">${log.username || '-'}</td>
                     <td>${log.details || '-'}</td>
                   </tr>
-                `).join('')}
+                `;
+                }).join('')}
               </tbody>
             </table>
           `;
@@ -502,6 +535,38 @@
       if (hours < 24) return `${hours}h ago`;
       if (days < 7) return `${days}d ago`;
       return date.toLocaleDateString();
+    }
+
+    function formatTimestamp(timestamp) {
+      const date = new Date(timestamp);
+      const tzAbbr = new Intl.DateTimeFormat('en-US', { timeZone: timezone, timeZoneName: 'short' })
+        .formatToParts(date)
+        .find(part => part.type === 'timeZoneName')?.value || '';
+      const formatted = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).format(date).replace(/,/g, '');
+      return `${formatted} ${tzAbbr}`;
+    }
+
+    function formatTimestampNoTZ(timestamp) {
+      const date = new Date(timestamp);
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }).format(date).replace(/,/g, '');
     }
 
   </script>
