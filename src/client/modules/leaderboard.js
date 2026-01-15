@@ -106,13 +106,23 @@ function renderRecentLogins(logins) {
     return;
   }
 
-  elements.recentLogins.innerHTML = logins.map(login => `
+  elements.recentLogins.innerHTML = logins.map(login => {
+    const match = login.username?.match(/^overlord(\d+)$/);
+    let usernameStyle = '';
+    if (match) {
+      const level = parseInt(match[1]);
+      const color = getLevelColor(level);
+      const glow = level === 15 ? `text-shadow: 0 0 10px ${color};` : '';
+      usernameStyle = `style="color: ${color}; ${glow}"`;
+    }
+    return `
     <div class="login-item">
-      <span class="timestamp">${formatTime(login.timestamp)}</span>
-      <span class="username">${login.username}</span>
+      <span class="username" ${usernameStyle}>${login.username}</span>
       <span class="fingerprint" onclick="searchByFingerprint('${login.fingerprint.substring(0, 12)}')">${login.fingerprint.substring(0, 12)}</span>
+      <span class="timestamp">${formatTime(login.timestamp)}</span>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function loadDashboard() {
@@ -228,6 +238,12 @@ export function initLeaderboard() {
 
   elements.searchDialog.addEventListener('click', (e) => {
     if (e.target === elements.searchDialog) {
+      elements.searchDialog.classList.add('hidden');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !elements.searchDialog.classList.contains('hidden')) {
       elements.searchDialog.classList.add('hidden');
     }
   });

@@ -3,6 +3,7 @@ TODO.md
 
 # OCI Image builder
 build.sh
+test-build.sh
 
 # docker-compose files
 docker-compose.yml

@@ -1,6 +1,6 @@
 Welcome to the Overlord server!
 
-General rules - be respectful, if you find bugs or errors notify doug.warden@sait.ca.
+General rules - be respectful, if you find bugs or errors in terminal version, please notify doug.warden@sait.ca. For issues in web version, notify hong.yan@sait.ca
 
 Please don't intentionally try to break things, this is designed to be a learning exercise for students
 

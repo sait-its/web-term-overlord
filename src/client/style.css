@@ -597,7 +597,7 @@ body {
 
 /* Leaderboard styles - extracted from leaderboard.html */
 .leaderboard-body {
-  font-family: Monaco, Menlo, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
   background: #1e1e1e;
   color: #d4d4d4;
   padding: 20px;
@@ -614,6 +614,17 @@ body {
   color: #27c93f;
   margin-bottom: 20px;
   font-size: 24px;
+}
+
+.overlords-link {
+  color: #27c93f;
+  text-decoration: none;
+  text-shadow: 0 0 10px #27c93f, 0 0 20px #27c93f, 0 0 30px #27c93f;
+  transition: text-shadow 0.3s ease;
+}
+
+.overlords-link:hover {
+  text-shadow: 0 0 15px #27c93f, 0 0 30px #27c93f, 0 0 45px #27c93f, 0 0 60px #27c93f;
 }
 
 .leaderboard-h2 {
@@ -636,7 +647,7 @@ body {
   border: 1px solid #3e3e3e;
   border-radius: 4px;
   color: #d4d4d4;
-  font-family: Monaco, Menlo, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
   font-size: 14px;
 }
 
@@ -769,7 +780,7 @@ body {
   display: grid;
   grid-template-columns: 140px 1fr 100px;
   gap: 15px;
-  padding: 10px;
+  padding: 10px 10px 10px 5px;
   margin-bottom: 6px;
   background: #1e1e1e;
   border-radius: 4px;
