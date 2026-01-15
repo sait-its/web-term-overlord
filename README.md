@@ -61,6 +61,7 @@ Open http://localhost:8080 in your browser.
 | `WEB_TERM_PORT` | 8080 | HTTP server port |
 | `BACKEND_SSH_HOST` | localhost | SSH server hostname |
 | `BACKEND_SSH_PORT` | 2222 | SSH server port |
+| `ADMIN_PASSWORD` | admin123 | Admin panel password (username: teacher) |
 
 ## Docker
 
@@ -128,6 +129,17 @@ Instructions specific to overlord1
 - Text before the first `=====overlordX=====` marker is general instructions
 - Each user sees general instructions + their specific section
 - The highest overlord number determines the progress bar maximum
+
+## Admin Panel
+
+Access the admin panel at http://localhost:8080/admin
+
+- **Username**: teacher
+- **Password**: Set via `ADMIN_PASSWORD` environment variable (default: admin123)
+- **Features**:
+  - Query authentication logs by browser fingerprint
+  - View timestamp, event type, username, IP address, and details
+  - Session-based authentication with token storage
 
 ## Architecture
 

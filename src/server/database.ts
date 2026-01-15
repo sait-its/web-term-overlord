@@ -100,4 +100,43 @@ export function closeDatabase(): void {
   db.close();
 }
 
+export function queryLogsByFingerprint(fingerprint: string): any[] {
+  const stmt = db.prepare(`
+    SELECT timestamp, event_type, username, fingerprint, ip_address, user_agent, details, session_id
+    FROM logs
+    WHERE fingerprint LIKE ?
+      AND event_type != 'auth_attempt'
+    ORDER BY timestamp DESC
+  `);
+  return stmt.all(fingerprint + '%');
+}
+
+export function getTopPerformers(limit: number = 10): any[] {
+  const stmt = db.prepare(`
+    SELECT 
+      username,
+      MAX(CAST(SUBSTR(username, 9) AS INTEGER)) as level,
+      fingerprint,
+      MAX(timestamp) as last_seen
+    FROM logs
+    WHERE event_type = 'auth_success' 
+      AND username LIKE 'overlord%'
+    GROUP BY username, fingerprint
+    ORDER BY level DESC, last_seen DESC
+    LIMIT ?
+  `);
+  return stmt.all(limit);
+}
+
+export function getRecentSuccessfulLogins(limit: number = 10): any[] {
+  const stmt = db.prepare(`
+    SELECT timestamp, username, fingerprint, ip_address
+    FROM logs
+    WHERE event_type = 'auth_success'
+    ORDER BY timestamp DESC
+    LIMIT ?
+  `);
+  return stmt.all(limit);
+}
+
 console.log(`SQLite database initialized at: ${dbPath}`);

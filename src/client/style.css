@@ -55,6 +55,17 @@ body {
   font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
 }
 
+.title .overlord-link {
+  color: #27c93f;
+  text-decoration: none;
+  text-shadow: 0 0 10px #27c93f;
+  font-weight: 600;
+}
+
+.title .overlord-link:hover {
+  text-shadow: 0 0 15px #27c93f;
+}
+
 .progress-container {
   display: none;
   align-items: center;
@@ -255,7 +266,7 @@ body {
   height: 20px;
   cursor: pointer;
   filter: brightness(0) invert(0.6);
-  transition: filter 0.2s;
+  transition: filter 2s;
 }
 
 .fingerprint-dialog-content .fingerprint-value .copy-icon:hover {

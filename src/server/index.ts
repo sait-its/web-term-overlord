@@ -4,7 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 import { Client, ClientChannel } from 'ssh2';
-import { log, closeDatabase } from './database.js';
+import { log, closeDatabase, queryLogsByFingerprint, getTopPerformers, getRecentSuccessfulLogins } from './database.js';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +13,9 @@ const __dirname = path.dirname(__filename);
 const HTTP_PORT = process.env.WEB_TERM_PORT || 8080;
 const SSH_HOST = process.env.BACKEND_SSH_HOST || 'localhost';
 const SSH_PORT = parseInt(process.env.BACKEND_SSH_PORT || '2222', 10);
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
+const adminTokens = new Set<string>();
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -52,9 +56,115 @@ function getUserAgent(req: http.IncomingMessage): string {
   return req.headers['user-agent'] || 'unknown';
 }
 
-const httpServer = http.createServer((req, res) => {
+function parseBody(req: http.IncomingMessage): Promise<any> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(body));
+      } catch {
+        resolve({});
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+const httpServer = http.createServer(async (req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
   let pathname = url.pathname;
+
+  // Leaderboard logs query endpoint
+  if (pathname === '/leaderboard/logs' && req.method === 'GET') {
+    const fingerprint = url.searchParams.get('fingerprint');
+    if (!fingerprint) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Fingerprint required' }));
+      return;
+    }
+
+    const logs = queryLogsByFingerprint(fingerprint);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ logs }));
+    return;
+  }
+
+  // Leaderboard dashboard data endpoint
+  if (pathname === '/leaderboard/dashboard' && req.method === 'GET') {
+    const topPerformers = getTopPerformers(10);
+    const recentLogins = getRecentSuccessfulLogins(10);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ topPerformers, recentLogins }));
+    return;
+  }
+
+  // Leaderboard page
+  if (pathname === '/leaderboard' || pathname === '/leaderboard/') {
+    pathname = '/leaderboard.html';
+  }
+
+  // Admin login endpoint
+  if (pathname === '/admin/login' && req.method === 'POST') {
+    const body = await parseBody(req);
+    if (body.username === 'teacher' && body.password === ADMIN_PASSWORD) {
+      const token = crypto.randomBytes(32).toString('hex');
+      adminTokens.add(token);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ token }));
+    } else {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid credentials' }));
+    }
+    return;
+  }
+
+  // Admin logs query endpoint
+  if (pathname === '/admin/logs' && req.method === 'GET') {
+    const auth = req.headers.authorization;
+    const token = auth?.replace('Bearer ', '');
+    
+    if (!token || !adminTokens.has(token)) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
+    const fingerprint = url.searchParams.get('fingerprint');
+    if (!fingerprint) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Fingerprint required' }));
+      return;
+    }
+
+    const logs = queryLogsByFingerprint(fingerprint);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ logs }));
+    return;
+  }
+
+  // Admin dashboard data endpoint
+  if (pathname === '/admin/dashboard' && req.method === 'GET') {
+    const auth = req.headers.authorization;
+    const token = auth?.replace('Bearer ', '');
+    
+    if (!token || !adminTokens.has(token)) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+
+    const topPerformers = getTopPerformers(10);
+    const recentLogins = getRecentSuccessfulLogins(10);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ topPerformers, recentLogins }));
+    return;
+  }
+
+  // Admin page
+  if (pathname === '/admin' || pathname === '/admin/') {
+    pathname = '/admin.html';
+  }
 
   if (pathname === '/') {
     pathname = '/index.html';

@@ -97,6 +97,17 @@ export function getOverlordLevel(username) {
 export function showProgress(username, maxOverlordLevel) {
   const level = getOverlordLevel(username);
   if (level !== null) {
+    // Update title with username and gradient color
+    const ratio = level / 15;
+    const green = { r: 39, g: 201, b: 63 }; // #27c93f
+    const gold = { r: 255, g: 215, b: 0 }; // #ffd700
+    const r = Math.round(green.r + (gold.r - green.r) * ratio);
+    const g = Math.round(green.g + (gold.g - green.g) * ratio);
+    const b = Math.round(green.b + (gold.b - green.b) * ratio);
+    const color = `rgb(${r}, ${g}, ${b})`;
+    const glow = level === 15 ? `text-shadow: 0 0 10px ${color};` : '';
+    elements.titleText.innerHTML = `<span style="color: ${color}; ${glow}">${username}</span>`;
+    
     const percentage = (level / maxOverlordLevel) * 100;
     elements.progressFill.style.width = percentage + '%';
     elements.progressText.textContent = `${level}/${maxOverlordLevel}`;
@@ -265,11 +276,10 @@ export async function copyFingerprint(fingerprint) {
     const shortFingerprint = fingerprint.substring(0, 12);
     try {
         await navigator.clipboard.writeText(shortFingerprint);
-        elements.fingerprintCopyBtn.style.filter = 'brightness(0) invert(0.4) sepia(1) saturate(5) hue-rotate(90deg)';
+        elements.fingerprintCopyBtn.style.filter = 'brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(1352%) hue-rotate(75deg) brightness(98%) contrast(86%)';
         setTimeout(() => {
-            elements.fingerprintCopyBtn.style.filter = '';
             closeFingerprintDialog();
-        }, 1500);
+        }, 2000);
         return true;
     } catch (e) {
         // Fallback
@@ -280,7 +290,10 @@ export async function copyFingerprint(fingerprint) {
         try {
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            closeFingerprintDialog();
+            elements.fingerprintCopyBtn.style.filter = 'brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(1352%) hue-rotate(75deg) brightness(98%) contrast(86%)';
+            setTimeout(() => {
+                closeFingerprintDialog();
+            }, 2000);
             return true;
         } catch (err) {
             document.body.removeChild(textArea);
