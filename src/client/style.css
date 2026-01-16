@@ -245,14 +245,14 @@ body {
 .fingerprint-dialog-content h3 {
   color: #e5e5e5;
   margin-bottom: 16px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 500;
 }
 
 .fingerprint-dialog-content .fingerprint-value {
   color: #27c93f;
   font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: 2px;
   margin-bottom: 20px;
   display: flex;
@@ -295,7 +295,7 @@ body {
 
 .fingerprint-dialog-content .hint {
   color: #888;
-  font-size: 11px;
+  font-size: 13px;
   margin-top: 12px;
 }
 

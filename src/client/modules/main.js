@@ -117,8 +117,14 @@ function setupEventListeners() {
         ui.copyFingerprint(fp);
     });
     
+    ui.elements.fingerprintDialog.addEventListener('click', (e) => {
+        if (e.target === ui.elements.fingerprintDialog) {
+            ui.closeFingerprintDialog();
+        }
+    });
+    
     document.addEventListener('keydown', (e) => {
-        if (!ui.elements.fingerprintDialog.classList.contains('hidden') && (e.key === 'q' || e.key === 'Q')) {
+        if (!ui.elements.fingerprintDialog.classList.contains('hidden') && (e.key === 'q' || e.key === 'Q' || e.key === 'Escape')) {
             ui.closeFingerprintDialog();
         }
     });
