@@ -251,7 +251,8 @@ wss.on('connection', (ws, req) => {
             ip_address: session?.ipAddress,
             user_agent: session?.userAgent,
             session_id: session?.sessionId,
-            details: 'Authentication attempt'
+            details: 'Authentication attempt',
+            preferred_name: auth.preferredName?.trim() || null
           });
 
           ssh.on('ready', () => {
@@ -264,7 +265,8 @@ wss.on('connection', (ws, req) => {
               ip_address: session?.ipAddress,
               user_agent: session?.userAgent,
               session_id: session?.sessionId,
-              details: 'SSH authentication successful'
+              details: 'SSH authentication successful',
+              preferred_name: auth.preferredName?.trim() || null
             });
 
             ssh.shell({ term: 'xterm-256color', cols, rows }, (err, stream) => {

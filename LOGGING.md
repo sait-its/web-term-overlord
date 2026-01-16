@@ -41,9 +41,13 @@ CREATE TABLE logs (
   ip_address TEXT,
   user_agent TEXT,
   details TEXT,
-  session_id TEXT
+  session_id TEXT,
+  preferred_name TEXT
 );
 ```
+
+**Fields:**
+- `preferred_name`: Optional display name set by overlord12+ users (max 16 chars)
 
 ## Fingerprint Viewer
 
@@ -52,7 +56,9 @@ Users can view their browser fingerprint by clicking the fingerprint icon in the
 - Displays first 12 characters of the fingerprint
 - Click the copy icon to copy to clipboard
 - Dialog closes automatically after copying (with green highlight feedback)
-- Press `q` or click X button to close manually
+- Press `ESC` or `q` to close manually
+- Click X button to close
+- Click outside dialog to close
 
 ## Usage
 
@@ -70,6 +76,9 @@ sqlite3 logs.db "SELECT timestamp, username, ip_address, event_type FROM logs WH
 
 # View logs by fingerprint
 sqlite3 logs.db "SELECT * FROM logs WHERE fingerprint LIKE 'abc123%' ORDER BY timestamp DESC;"
+
+# View preferred names
+sqlite3 logs.db "SELECT username, preferred_name, MAX(timestamp) as last_updated FROM logs WHERE preferred_name IS NOT NULL GROUP BY username ORDER BY last_updated DESC;"
 
 # Count events by type
 sqlite3 logs.db "SELECT event_type, COUNT(*) as count FROM logs GROUP BY event_type;"
@@ -90,6 +99,7 @@ Each log entry contains:
 - `user_agent`: Browser user agent string
 - `details`: Additional event-specific information
 - `session_id`: Unique session identifier (format: `ws-{timestamp}-{random}`)
+- `preferred_name`: Optional display name (overlord12+ users only, max 16 chars)
 
 ### Example Log Entry
 

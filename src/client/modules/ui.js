@@ -22,6 +22,8 @@ export const elements = {
   loginError: document.getElementById('login-error'),
   usernameInput: document.getElementById('username'),
   passwordInput: document.getElementById('password'),
+  preferredNameContainer: document.getElementById('preferred-name-container'),
+  preferredNameInput: document.getElementById('preferred-name'),
   fingerprintBtn: document.getElementById('fingerprint-btn'),
   fingerprintDialog: document.getElementById('fingerprint-dialog'),
   fingerprintValue: document.getElementById('fingerprint-value'),

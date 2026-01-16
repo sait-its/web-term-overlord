@@ -528,6 +528,21 @@ body {
   text-align: center;
 }
 
+.login-form .preferred-name-container {
+  margin-bottom: 16px;
+}
+
+.login-form .preferred-name-container input {
+  margin-bottom: 8px;
+}
+
+.login-form .preferred-name-container .hint {
+  color: #888;
+  font-size: 12px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
 .hidden {
   display: none !important;
 }

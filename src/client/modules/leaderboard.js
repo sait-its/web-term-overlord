@@ -88,16 +88,35 @@ function renderTopPerformers(performers) {
   elements.topPerformers.innerHTML = performers.map((p, i) => {
     const color = getLevelColor(p.level);
     const glow = p.level === 15 ? `text-shadow: 0 0 10px ${color};` : '';
+    const displayName = p.preferred_name || p.fingerprint.substring(0, 12);
+    const fingerprintShort = p.fingerprint.substring(0, 12);
+    const hasPreferredName = !!p.preferred_name;
+    
     return `
     <div class="leaderboard-item">
       <div>
         <span class="medal">${medals[i] || ''}</span>
-        <span class="level" style="cursor: pointer; color: ${color}; ${glow}" onclick="searchByFingerprint('${p.fingerprint.substring(0, 12)}')">${p.level} - ${p.fingerprint.substring(0, 12)}</span>
+        <span class="level" style="cursor: pointer; color: ${color}; ${glow}" onclick="searchByFingerprint('${fingerprintShort}')" ${hasPreferredName ? `data-fingerprint="${fingerprintShort}" data-preferred="${displayName}"` : ''}>${p.level} - <span class="name-display">${displayName}</span></span>
       </div>
       <div class="meta">Last seen: ${formatTime(p.last_seen)}</div>
     </div>
   `;
   }).join('');
+  
+  // Add hover listeners for preferred names
+  document.querySelectorAll('.level[data-fingerprint]').forEach(el => {
+    const nameSpan = el.querySelector('.name-display');
+    const fingerprint = el.dataset.fingerprint;
+    const preferred = el.dataset.preferred;
+    
+    el.addEventListener('mouseenter', () => {
+      nameSpan.textContent = fingerprint;
+    });
+    
+    el.addEventListener('mouseleave', () => {
+      nameSpan.textContent = preferred;
+    });
+  });
 }
 
 function renderRecentLogins(logins) {

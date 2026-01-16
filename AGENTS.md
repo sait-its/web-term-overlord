@@ -78,14 +78,15 @@ npm start
 ## Authentication Flow
 
 1. User enters username/password in login form
-2. Frontend generates browser fingerprint using FingerprintJS
-3. Frontend connects via WebSocket to backend
-4. Backend sends `auth_required` message
-5. Frontend sends credentials with fingerprint
-6. Backend logs auth attempt to SQLite database
-7. Backend establishes SSH connection
-8. On success: terminal session starts, title changes to "Overlord", progress bar shown, auth success logged
-9. On failure: auth failure logged, page reloads, username preserved via sessionStorage
+2. If username is overlord12+, optional preferred name field appears (max 16 chars)
+3. Frontend generates browser fingerprint using FingerprintJS
+4. Frontend connects via WebSocket to backend
+5. Backend sends `auth_required` message
+6. Frontend sends credentials with fingerprint and optional preferred name
+7. Backend logs auth attempt to SQLite database (including preferred name)
+8. Backend establishes SSH connection
+9. On success: terminal session starts, title changes to "Overlord", progress bar shown, auth success logged with preferred name
+10. On failure: auth failure logged, page reloads, username preserved via sessionStorage
 
 ## Terminal Features
 
@@ -102,7 +103,8 @@ npm start
 - Displays first 12 characters of browser fingerprint
 - Copy icon next to fingerprint - click to copy to clipboard (turns green, then closes dialog)
 - Round X button at top-right to close
-- Press `q` key to close
+- Press `ESC` or `q` key to close
+- Click outside dialog to close
 - Uses FingerprintJS library for reliable browser identification
 
 ## Instructions Panel
@@ -119,3 +121,12 @@ npm start
 - Shows current level vs max level (e.g., "5/15")
 - Max level auto-detected from instructions.txt markers
 - Green fill (#27c93f) indicates progress percentage
+
+## Preferred Names
+
+- Optional field appears in login form for overlord12+ users
+- Max 16 characters
+- Stored in logs table with each auth attempt/success
+- Displayed on leaderboard instead of fingerprint
+- Hover over preferred name on leaderboard to reveal fingerprint
+- Click to search by fingerprint

@@ -17,6 +17,7 @@ A web-based SSH terminal client using [ghostty-web](https://github.com/coder/gho
 - **Browser fingerprinting** - Unique visitor identification using FingerprintJS
 - **Authentication logging** - SQLite-based logging of auth events
 - **Fingerprint viewer** - Click fingerprint button to view/copy your browser fingerprint
+- **Preferred names** - Users at overlord12+ can set a preferred name for the leaderboard
 
 ## Quick Start
 
@@ -107,10 +108,11 @@ docker run -p 3000:3000 -e WEB_TERM_PORT=3000 web-term-overlord
 ### UI Features
 
 - **Font size**: Use +/- buttons in the title bar to adjust terminal font size (12-28px)
-- **Fingerprint**: Click the fingerprint icon to view your browser fingerprint (first 12 chars). Click the copy icon to copy it to clipboard. Press `q` or click X to close.
+- **Fingerprint**: Click the fingerprint icon to view your browser fingerprint (first 12 chars). Click the copy icon to copy it to clipboard. Press `ESC` or `q` to close. Click outside dialog to close.
 - **Instructions**: Click "Instructions" button to toggle the left panel with user-specific guidance
 - **Progress bar**: Shows current level progress (e.g., "5/15" for overlord5)
 - **Reconnect**: Click "Reconnect" button to re-establish connection
+- **Preferred name**: Users at overlord12+ see an optional field to set a preferred name for the leaderboard (max 16 characters)
 
 ### Instructions File
 
@@ -138,8 +140,18 @@ Access the admin panel at http://localhost:8080/admin
 - **Password**: Set via `ADMIN_PASSWORD` environment variable (default: admin123)
 - **Features**:
   - Query authentication logs by browser fingerprint
-  - View timestamp, event type, username, IP address, and details
+  - View timestamp, event type, username, IP address, preferred name, and details
   - Session-based authentication with token storage
+
+## Leaderboard
+
+Access the leaderboard at http://localhost:8080/leaderboard
+
+- **Top Performers**: Shows highest level users with their preferred names (if set)
+  - Hover over preferred names to reveal fingerprints
+  - Click to search by fingerprint
+- **Recent Logins**: Latest successful authentication attempts
+- **Search**: Query logs by browser fingerprint
 
 ## Architecture
 
@@ -156,7 +168,7 @@ The application consists of two main components:
 ### Client (`src/client/index.html`)
 - Single-page application with embedded styles and scripts
 - ghostty-web terminal emulator (WASM-based)
-- Login form with username/password authentication
+- Login form with username/password authentication and optional preferred name field
 - Browser fingerprinting using FingerprintJS library
 - Fingerprint viewer dialog with copy-to-clipboard functionality
 - Instructions panel with per-user content parsing

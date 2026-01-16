@@ -12,7 +12,7 @@ export function clearCredentials() {
     lastPassword = '';
 }
 
-export function connect(username, password, terminalDims, fingerprint, callbacks) {
+export function connect(username, password, terminalDims, fingerprint, preferredName, callbacks) {
     // callbacks schema:
     // { setStatus, onAuthSuccess, onData, showLoginError }
     
@@ -39,7 +39,7 @@ export function connect(username, password, terminalDims, fingerprint, callbacks
             const msg = JSON.parse(event.data);
             if (msg.type === 'auth_required') {
                 console.log('Auth required, sending credentials');
-                ws.send(JSON.stringify({ type: 'auth', username, password, fingerprint }));
+                ws.send(JSON.stringify({ type: 'auth', username, password, fingerprint, preferredName }));
                 return;
             }
             if (msg.type === 'error') {

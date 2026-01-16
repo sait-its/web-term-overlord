@@ -68,8 +68,20 @@ function setupEventListeners() {
         
         const username = ui.elements.usernameInput.value;
         const password = ui.elements.passwordInput.value;
+        const preferredName = ui.elements.preferredNameInput.value.trim();
         
-        await connectToOverlord(username, password);
+        await connectToOverlord(username, password, preferredName);
+    });
+
+    // Show preferred name field for overlord12+
+    ui.elements.usernameInput.addEventListener('input', () => {
+        const username = ui.elements.usernameInput.value;
+        const match = username.match(/^overlord(\d+)$/);
+        if (match && parseInt(match[1]) >= 12) {
+            ui.elements.preferredNameContainer.classList.remove('hidden');
+        } else {
+            ui.elements.preferredNameContainer.classList.add('hidden');
+        }
     });
     
     // Reconnect
@@ -130,7 +142,7 @@ function setupEventListeners() {
     });
 }
 
-async function connectToOverlord(username, password) {
+async function connectToOverlord(username, password, preferredName = '') {
     if (!terminal.isWasmReady()) {
         ui.showLoginError('Still loading, please wait...');
         return;
@@ -153,7 +165,7 @@ async function connectToOverlord(username, password) {
     
     const fp = await getFingerprint();
     
-    connection.connect(username, password, terminal.getDims(), fp, {
+    connection.connect(username, password, terminal.getDims(), fp, preferredName, {
         setStatus: ui.setStatus,
         onAuthSuccess: (user) => {
             ui.onLoginSuccess();

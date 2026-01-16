@@ -39,7 +39,8 @@ db.exec(`
     ip_address TEXT,
     user_agent TEXT,
     details TEXT,
-    session_id TEXT
+    session_id TEXT,
+    preferred_name TEXT
   );
 
   CREATE INDEX IF NOT EXISTS idx_timestamp ON logs(timestamp);
@@ -56,11 +57,12 @@ interface LogEntry {
   user_agent?: string;
   details?: string;
   session_id?: string;
+  preferred_name?: string;
 }
 
 const insertStmt = db.prepare(`
-  INSERT INTO logs (timestamp, event_type, username, fingerprint, ip_address, user_agent, details, session_id)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO logs (timestamp, event_type, username, fingerprint, ip_address, user_agent, details, session_id, preferred_name)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 const deleteOldStmt = db.prepare(`
@@ -91,7 +93,8 @@ export function log(entry: LogEntry): void {
     entry.ip_address || null,
     entry.user_agent || null,
     entry.details || null,
-    entry.session_id || null
+    entry.session_id || null,
+    entry.preferred_name || null
   );
 }
 
@@ -117,8 +120,13 @@ export function getTopPerformers(limit: number = 10): any[] {
       username,
       MAX(CAST(SUBSTR(username, 9) AS INTEGER)) as level,
       fingerprint,
-      MAX(timestamp) as last_seen
-    FROM logs
+      MAX(timestamp) as last_seen,
+      (SELECT preferred_name FROM logs 
+       WHERE username = l.username 
+         AND fingerprint = l.fingerprint 
+         AND preferred_name IS NOT NULL 
+       ORDER BY timestamp DESC LIMIT 1) as preferred_name
+    FROM logs l
     WHERE event_type = 'auth_success' 
       AND username LIKE 'overlord%'
     GROUP BY username, fingerprint
