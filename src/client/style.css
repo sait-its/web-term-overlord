@@ -677,7 +677,7 @@ body {
   border: none;
   border-radius: 4px;
   color: #1e1e1e;
-  font-family: Monaco, Menlo, 'Courier New', monospace;
+  font-family: 'Geist Mono', Monaco, 'Courier New', monospace;
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
