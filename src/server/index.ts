@@ -56,6 +56,23 @@ function getUserAgent(req: http.IncomingMessage): string {
   return req.headers['user-agent'] || 'unknown';
 }
 
+// Sanitize preferred name to prevent injection attacks
+function sanitizePreferredName(input: string | undefined): string | undefined {
+  if (!input || typeof input !== 'string') return undefined;
+
+  // Remove HTML special characters and non-printable ASCII
+  const sanitized = input
+    .replace(/[<>'"&]/g, '') // Remove HTML special characters
+    .replace(/[^\x20-\x7E]/g, '') // Remove non-printable ASCII characters
+    .trim();
+
+  // Return undefined if empty after sanitization
+  if (!sanitized || sanitized.length === 0) return undefined;
+
+  // Enforce max length of 16 characters
+  return sanitized.substring(0, 16);
+}
+
 function parseBody(req: http.IncomingMessage): Promise<any> {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -252,7 +269,7 @@ wss.on('connection', (ws, req) => {
             user_agent: session?.userAgent,
             session_id: session?.sessionId,
             details: 'Authentication attempt',
-            preferred_name: auth.preferredName?.trim() || null
+            preferred_name: sanitizePreferredName(auth.preferredName)
           });
 
           ssh.on('ready', () => {
@@ -266,7 +283,7 @@ wss.on('connection', (ws, req) => {
               user_agent: session?.userAgent,
               session_id: session?.sessionId,
               details: 'SSH authentication successful',
-              preferred_name: auth.preferredName?.trim() || null
+              preferred_name: sanitizePreferredName(auth.preferredName)
             });
 
             ssh.shell({ term: 'xterm-256color', cols, rows }, (err, stream) => {

@@ -1,6 +1,10 @@
 TODO.txt
 TODO.md
 
+# Audit logs and reports
+src/audit/CLEANUP_REPORT.md
+src/audit/audit-report*
+
 # OCI Image builder
 build.sh
 test-build.sh

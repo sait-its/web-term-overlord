@@ -1,5 +1,5 @@
 import { MIN_FONT_SIZE, MAX_FONT_SIZE } from './config.js';
-import { generateFingerprint } from './utils.js';
+import { generateFingerprint, sanitizeInput } from './utils.js';
 import * as ui from './ui.js';
 import * as terminal from './terminal.js';
 import * as connection from './connection.js';
@@ -65,11 +65,12 @@ function setupEventListeners() {
     ui.elements.loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         ui.elements.loginError.classList.add('hidden');
-        
+
         const username = ui.elements.usernameInput.value;
         const password = ui.elements.passwordInput.value;
-        const preferredName = ui.elements.preferredNameInput.value.trim();
-        
+        // Sanitize preferred name to prevent injection attacks
+        const preferredName = sanitizeInput(ui.elements.preferredNameInput.value);
+
         await connectToOverlord(username, password, preferredName);
     });
 

@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node:*)",
+      "Bash(NODE_OPTIONS='--trace-warnings' node:*)",
+      "Bash(/tmp/audit_database.sh)",
+      "Bash(chmod:*)",
+      "Bash(./quick-check.sh:*)",
+      "Bash(./check-injections.sh:*)",
+      "Bash(ls:*)",
+      "Bash(head:*)",
+      "Bash(./test-sanitization.sh:*)",
+      "Bash(tree:*)",
+      "Bash(DRY_RUN=true ./clean-database.sh:*)",
+      "Bash(./clean-database.sh:*)",
+      "Bash(./summary.sh:*)",
+      "Bash(bash:*)"
+    ]
+  }
+}

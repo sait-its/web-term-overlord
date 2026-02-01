@@ -65,3 +65,30 @@ export function launchConfetti() {
 export function isNarrowViewport() {
   return window.innerWidth <= 640;
 }
+
+// Sanitize text input to prevent injection attacks
+export function sanitizeInput(input) {
+  if (typeof input !== 'string') return '';
+
+  // Remove or replace potentially dangerous characters
+  return input
+    .replace(/[<>'"&]/g, '') // Remove HTML special characters
+    .replace(/[^\x20-\x7E]/g, '') // Remove non-printable ASCII characters
+    .trim()
+    .substring(0, 16); // Enforce max length
+}
+
+// Escape HTML to prevent XSS when displaying user content
+export function escapeHtml(text) {
+  if (typeof text !== 'string') return '';
+
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+
+  return text.replace(/[&<>"']/g, char => map[char]);
+}

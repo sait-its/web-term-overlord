@@ -17,16 +17,40 @@ web-term/
 ├── src/
 │   ├── client/
 │   │   ├── index.html        # Frontend with ghostty-web terminal
+│   │   ├── leaderboard.html  # Leaderboard page
 │   │   ├── instructions.txt  # Per-user instructions file
-│   │   └── assets/           # UI icons (fingerprint, copy, font controls)
-│   └── server/
-│       ├── index.ts          # WebSocket server with SSH client
-│       └── database.ts       # SQLite logging module
+│   │   ├── assets/           # UI icons (fingerprint, copy, font controls)
+│   │   ├── modules/          # Client-side JavaScript modules
+│   │   │   ├── main.js       # Main entry point, login handling
+│   │   │   ├── connection.js # WebSocket connection management
+│   │   │   ├── terminal.js   # Terminal initialization and management
+│   │   │   ├── ui.js         # UI state and event handlers
+│   │   │   ├── utils.js      # Utilities (fingerprint, sanitization)
+│   │   │   └── leaderboard.js # Leaderboard functionality
+│   │   └── style.css         # Global styles
+│   ├── server/
+│   │   ├── index.ts          # WebSocket server with SSH client
+│   │   └── database.ts       # SQLite logging module
+│   └── audit/                # Security audit tools ⭐
+│       ├── check-injections.sh      # Full security audit
+│       ├── quick-check.sh           # Fast security check
+│       ├── clean-database.sh        # Database cleanup script
+│       ├── verify-truncation.sh     # Verify 16-char limit
+│       ├── test-sanitization.sh     # Test sanitization
+│       ├── sql-queries.sql          # Manual SQL queries
+│       ├── examples.sh              # Usage examples
+│       ├── summary.sh               # Audit summary
+│       ├── README.md                # Audit documentation
+│       ├── CLEANUP_REPORT.md        # Cleanup details
+│       ├── TRUNCATION_VERIFICATION.md # Truncation verification
+│       └── audit-report-*.txt       # Generated reports
+├── backups/                  # Database backups (auto-created)
 ├── logs.db                   # SQLite database for auth logs
 ├── package.json
 ├── tsconfig.json
 ├── Dockerfile                # Uses Bun as runtime
-└── README.md
+├── README.md
+└── AGENTS.md                 # This file
 ```
 
 ## Key Technologies
@@ -125,8 +149,113 @@ npm start
 ## Preferred Names
 
 - Optional field appears in login form for overlord12+ users
-- Max 16 characters
+- Max 16 characters (enforced on client and server)
 - Stored in logs table with each auth attempt/success
 - Displayed on leaderboard instead of fingerprint
 - Hover over preferred name on leaderboard to reveal fingerprint
 - Click to search by fingerprint
+
+### Security & Sanitization
+
+**Multi-layer protection against injection attacks:**
+
+1. **Client-side Sanitization** (`src/client/modules/main.js:72`)
+   - Removes HTML special characters: `<`, `>`, `'`, `"`, `&`
+   - Strips non-printable ASCII characters
+   - Enforces 16 character maximum length
+   - Applied before sending to server
+
+2. **HTML Input Constraint** (`src/client/index.html:66`)
+   - Browser-enforced `maxlength="16"` attribute
+   - Prevents typing more than 16 characters
+
+3. **Server-side Validation** (`src/server/index.ts:60-74`)
+   - Final defense layer (cannot be bypassed)
+   - Sanitizes all input before database insertion
+   - Removes dangerous characters
+   - Truncates to 16 characters
+   - Returns `undefined` if empty after sanitization
+
+4. **HTML Escaping on Display** (`src/client/modules/leaderboard.js`)
+   - Escapes HTML entities when rendering names
+   - Prevents XSS attacks even if malicious data exists
+
+**Protected against:**
+- ✅ XSS (Cross-Site Scripting)
+- ✅ HTML Injection
+- ✅ SQL Injection (via parameterized queries)
+- ✅ Command Injection
+- ✅ Length-based attacks
+
+## Database Audit Tools
+
+Security audit scripts located in `src/audit/`:
+
+### Quick Commands
+
+```bash
+# Daily quick check (30 seconds)
+cd src/audit && ./quick-check.sh
+
+# Weekly full audit (1 minute)
+cd src/audit && ./check-injections.sh
+
+# Clean malicious entries
+cd src/audit && ./clean-database.sh
+
+# Preview cleanup (dry-run)
+cd src/audit && DRY_RUN=true ./clean-database.sh
+
+# Verify truncation working
+cd src/audit && ./verify-truncation.sh
+
+# Test sanitization demo
+cd src/audit && ./test-sanitization.sh
+
+# View summary
+cd src/audit && ./summary.sh
+```
+
+### Audit Scripts
+
+| Script | Purpose | Output |
+|--------|---------|--------|
+| `check-injections.sh` | Full security audit | Console + report file |
+| `quick-check.sh` | Fast security check | Console only |
+| `clean-database.sh` | Remove/sanitize malicious entries | Interactive cleanup |
+| `verify-truncation.sh` | Verify 16-char limit enforced | Statistics |
+| `test-sanitization.sh` | Demo blocked attack patterns | Test results |
+| `sql-queries.sql` | Manual SQL query collection | SQL commands |
+| `examples.sh` | Usage guide and examples | Help text |
+| `summary.sh` | Show audit summary | Summary report |
+
+### Audit Checks
+
+**Detects:**
+- HTML tags: `<script>`, `<iframe>`, `<img>`, `<h1>`, etc.
+- XSS patterns: `javascript:`, `onerror=`, `onclick=`, etc.
+- SQL injection: `' OR '1'='1`, `'; DROP TABLE`, etc.
+- Command injection: `$(command)`, backticks, pipes
+- Special characters: `<`, `>`, `&`, `"`, `'`
+- Length violations: Names exceeding 16 characters
+- Non-ASCII characters: Emojis, control characters
+
+### Documentation
+
+- `src/audit/README.md` - Comprehensive audit guide
+- `src/audit/CLEANUP_REPORT.md` - Database cleanup details
+- `src/audit/TRUNCATION_VERIFICATION.md` - Truncation verification
+- `src/audit/audit-report-*.txt` - Audit history (auto-generated)
+
+### Scheduled Audits
+
+```bash
+# Add to crontab for automatic security checks
+crontab -e
+
+# Daily quick check at 2 AM
+0 2 * * * cd /home/yanh/dev/web-term/src/audit && ./quick-check.sh
+
+# Weekly full audit on Sunday at 3 AM
+0 3 * * 0 cd /home/yanh/dev/web-term/src/audit && ./check-injections.sh
+```

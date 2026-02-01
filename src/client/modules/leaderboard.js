@@ -1,5 +1,20 @@
 // Leaderboard module - extracted from leaderboard.html
 
+// Escape HTML to prevent XSS attacks
+function escapeHtml(text) {
+  if (typeof text !== 'string') return '';
+
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+
+  return text.replace(/[&<>"']/g, char => map[char]);
+}
+
 const elements = {
   searchBtn: document.getElementById('searchBtn'),
   fingerprintSearch: document.getElementById('fingerprintSearch'),
@@ -88,10 +103,10 @@ function renderTopPerformers(performers) {
   elements.topPerformers.innerHTML = performers.map((p, i) => {
     const color = getLevelColor(p.level);
     const glow = p.level === 15 ? `text-shadow: 0 0 10px ${color};` : '';
-    const displayName = p.preferred_name || p.fingerprint.substring(0, 12);
-    const fingerprintShort = p.fingerprint.substring(0, 12);
+    const displayName = escapeHtml(p.preferred_name || p.fingerprint.substring(0, 12));
+    const fingerprintShort = escapeHtml(p.fingerprint.substring(0, 12));
     const hasPreferredName = !!p.preferred_name;
-    
+
     return `
     <div class="leaderboard-item">
       <div>
