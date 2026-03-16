@@ -1,6 +1,6 @@
 {
   "name": "web-term",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "node --loader ts-node/esm src/server/index.ts",
@@ -8,15 +8,15 @@
     "start": "node dist/server/index.js"
   },
   "dependencies": {
-    "@fingerprintjs/fingerprintjs": "^5.0.1",
+    "@fingerprintjs/fingerprintjs": "^5.1.0",
     "@types/better-sqlite3": "^7.6.13",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.8.0",
     "ghostty-web": "^0.4.0",
     "ssh2": "^1.17.0",
     "ws": "^8.19.0"
   },
   "devDependencies": {
-    "@types/node": "^25.1.0",
+    "@types/node": "^25.5.0",
     "@types/ssh2": "^1.15.5",
     "@types/ws": "^8.18.1",
     "ts-node": "^10.9.2",
