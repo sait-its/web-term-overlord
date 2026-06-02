@@ -1,12 +1,18 @@
-FROM node:trixie-slim AS base
+FROM node:24-trixie-slim AS base
 WORKDIR /app
 
 FROM base AS install
-RUN apt-get update && apt-get install -y python3 build-essential && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends python3 build-essential \
+  && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 RUN npm ci || npm install
 
 FROM base AS release
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends sqlite3 \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=install /app/node_modules ./node_modules
 COPY src ./src
 COPY package.json tsconfig.json ./
