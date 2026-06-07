@@ -1,6 +1,9 @@
 TODO.txt
 TODO.md
 
+# Backups
+*.gz
+
 # Audit logs and reports
 src/audit/CLEANUP_REPORT.md
 src/audit/audit-report*

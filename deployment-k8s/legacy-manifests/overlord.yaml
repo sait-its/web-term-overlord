@@ -1,0 +1,107 @@
+---
+# --- Backend Service (Overlord) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overlord-backend-deployment
+  namespace: sandbox-overlord
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: overlord-backend
+  template:
+    metadata:
+      labels:
+        app: overlord-backend
+    spec:
+      hostname: overlord
+      imagePullSecrets:
+        - name: dockerhub-image-pull-secret
+      automountServiceAccountToken: false
+      containers:
+        - name: overlord
+          image: hongsait/overlord:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 2222
+          resources:
+            limits:
+              cpu: "2"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: overlord-backend-service
+  namespace: sandbox-overlord
+spec:
+  selector:
+    app: overlord-backend
+  ports:
+    - protocol: TCP
+      port: 2222
+      targetPort: 2222
+  type: ClusterIP
+
+---
+# --- Frontend Service (Web Term) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-term-overlord-deployment
+  namespace: sandbox-overlord
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: web-term-overlord
+  template:
+    metadata:
+      labels:
+        app: web-term-overlord
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-image-pull-secret
+      automountServiceAccountToken: false
+      containers:
+        - name: web-term-overlord
+          image: hongsait/web-term-overlord:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: BACKEND_SSH_HOST
+              value: "overlord-backend-service"
+            - name: BACKEND_SSH_PORT
+              value: "2222"
+            - name: TIMEZONE
+              value: "America/Edmonton"
+          resources:
+            limits:
+              cpu: "2"
+              memory: "1Gi"
+          volumeMounts:
+            - name: data-volume
+              mountPath: /app/logs.db
+              subPath: logs.db
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: apps-web-term-overlord-iscsi-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-term-overlord-service
+  namespace: sandbox-overlord
+spec:
+  selector:
+    app: web-term-overlord
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

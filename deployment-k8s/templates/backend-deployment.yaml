@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.backend.deploymentName }}
+  namespace: {{ include "overlord.namespace" . }}
+  labels:
+    {{- include "overlord.commonLabels" . | nindent 4 }}
+    app: {{ .Values.backend.app }}
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.backend.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.backend.app }}
+        app.kubernetes.io/name: {{ include "overlord.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- if .Values.rollout.backendRestartAt }}
+      annotations:
+        kubectl.kubernetes.io/restartedAt: {{ .Values.rollout.backendRestartAt | quote }}
+      {{- end }}
+    spec:
+      hostname: {{ .Values.backend.hostname }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: {{ .Values.backend.automountServiceAccountToken }}
+      containers:
+        - name: overlord
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backend.service.targetPort }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}

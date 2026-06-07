@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: isolate-student-backend
+  namespace: sandbox-overlord
+spec:
+  # 1. Apply this policy ONLY to the Backend Pod
+  podSelector:
+    matchLabels:
+      app: overlord-backend
+
+  # 2. We are controlling both Inbound (Ingress) and Outbound (Egress) traffic
+  policyTypes:
+    - Ingress
+    - Egress
+
+  # 3. INGRESS: Who can talk to the Backend?
+  ingress:
+    - from:
+        # Only allow traffic from the Web Terminal Pod
+        - podSelector:
+            matchLabels:
+              app: web-term-overlord
+      ports:
+        # Only allow traffic on the SSH port
+        - protocol: TCP
+          port: 2222
+
+  # 4. EGRESS: Who can the Backend talk to?
+  # We list 'Egress' in policyTypes but provide NO rules below.
+  # This results in a "Default Deny" for all outbound traffic.
+  # - No Internet
+  # - No DNS (cannot resolve google.com)
+  # - No other pods
+  egress: []

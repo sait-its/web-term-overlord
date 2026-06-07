@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.frontend.deploymentName }}
+  namespace: {{ include "overlord.namespace" . }}
+  labels:
+    {{- include "overlord.commonLabels" . | nindent 4 }}
+    app: {{ .Values.frontend.app }}
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  strategy:
+    {{- toYaml .Values.frontend.strategy | nindent 4 }}
+  selector:
+    matchLabels:
+      app: {{ .Values.frontend.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.frontend.app }}
+        app.kubernetes.io/name: {{ include "overlord.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- if .Values.rollout.frontendRestartAt }}
+      annotations:
+        kubectl.kubernetes.io/restartedAt: {{ .Values.rollout.frontendRestartAt | quote }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: {{ .Values.frontend.automountServiceAccountToken }}
+      containers:
+        - name: web-term-overlord
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.frontend.service.targetPort }}
+          env:
+            {{- range $name, $value := .Values.frontend.env }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: data-volume
+              mountPath: {{ .Values.frontend.persistence.mountPath }}
+              subPath: {{ .Values.frontend.persistence.subPath }}
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.claimName }}
+      {{- end }}

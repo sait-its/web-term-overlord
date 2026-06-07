@@ -1,0 +1,69 @@
+namespaceOverride: sandbox-overlord
+
+imagePullSecrets:
+  - name: dockerhub-image-pull-secret
+
+rollout:
+  backendRestartAt: ""
+  frontendRestartAt: ""
+
+backend:
+  deploymentName: overlord-backend-deployment
+  serviceName: overlord-backend-service
+  app: overlord-backend
+  replicas: 1
+  hostname: overlord
+  automountServiceAccountToken: false
+  image:
+    repository: hongsait/overlord
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 2222
+    targetPort: 2222
+  resources:
+    limits:
+      cpu: "2"
+      memory: 1Gi
+
+frontend:
+  deploymentName: web-term-overlord-deployment
+  serviceName: web-term-overlord-service
+  app: web-term-overlord
+  replicas: 1
+  strategy:
+    type: Recreate
+  automountServiceAccountToken: false
+  image:
+    repository: hongsait/web-term-overlord
+    tag: latest
+    pullPolicy: Always
+  env:
+    BACKEND_SSH_HOST: overlord-backend-service
+    BACKEND_SSH_PORT: "2222"
+    TIMEZONE: America/Edmonton
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  resources:
+    limits:
+      cpu: "2"
+      memory: 1Gi
+  persistence:
+    mountPath: /app/logs.db
+    subPath: logs.db
+
+persistence:
+  enabled: true
+  claimName: apps-web-term-overlord-iscsi-pvc
+  create: true
+  storageClassName: iscsi
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+
+networkPolicy:
+  enabled: true
+  name: isolate-student-backend
